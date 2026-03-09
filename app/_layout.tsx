@@ -1,9 +1,20 @@
-import { Stack } from "expo-router";
+import { Drawer } from "expo-router/drawer";
 
 export default function RootLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    </Stack>
+    <Drawer screenOptions={{ headerShown: false }}>
+      <Drawer.Screen
+        name="(tabs)"
+        options={{
+          title: "Home",
+        }}
+      />
+      <Drawer.Screen
+        name="add-book"
+        options={{
+          title: "Add book",
+        }}
+      />
+    </Drawer>
   );
 }
