@@ -3,12 +3,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 export default function Library() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Library screen</Text>
-      <Link href="/friends" style={styles.button}>
-        Go to friends screen
-      </Link>
-    </View>
+    <>
+      <View style={styles.container}>
+        <Text style={styles.text}>Library screen</Text>
+        <Link href="/friends" style={styles.button}>
+          Go to friends screen
+        </Link>
+      </View>
+    </>
   );
 }
 
