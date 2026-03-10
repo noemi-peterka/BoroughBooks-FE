@@ -1,21 +1,103 @@
-import { StyleSheet, Text, View } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { FriendList } from "../../components/FriendList";
+
+const friends = [
+  {
+    id: "1",
+    name: "John Smith",
+    subtitle: "1 book lent",
+    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+  },
+  {
+    id: "2",
+    name: "Kevin Brown",
+    subtitle: "3 books borrowed",
+    avatar: "https://randomuser.me/api/portraits/men/45.jpg",
+  },
+  {
+    id: "3",
+    name: "Anna Pavlova",
+    avatar: "https://randomuser.me/api/portraits/women/65.jpg",
+  },
+  {
+    id: "4",
+    name: "Maria Ivanova",
+    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+  },
+  {
+    id: "5",
+    name: "Alex Green",
+    avatar: "https://randomuser.me/api/portraits/men/12.jpg",
+  },
+];
 
 export default function FriendsScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Friends screen</Text>
+    <View style={styles.screen}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>My friends</Text>
+
+          <TouchableOpacity>
+            <Ionicons name="menu" size={32} color="#111" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchWrapper}>
+          <Ionicons name="search-outline" size={18} color="#7A7A7A" />
+          <TextInput
+            placeholder="Search"
+            placeholderTextColor="#7A7A7A"
+            style={styles.searchInput}
+          />
+          <Ionicons name="mic-outline" size={18} color="#7A7A7A" />
+        </View>
+
+        <FriendList friends={friends} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#F3F3F3",
+    paddingHorizontal: 24,
+    paddingTop: 24,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#ffffffff",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 12,
   },
-  text: {
-    color: "#000000ff",
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#000",
+  },
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E9E9E9",
+    borderRadius: 18,
+    paddingHorizontal: 10,
+    height: 38,
+    marginBottom: 28,
+  },
+  searchInput: {
+    flex: 1,
+    marginHorizontal: 8,
+    fontSize: 14,
+    color: "#111",
   },
 });
