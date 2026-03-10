@@ -9,7 +9,8 @@ import {
   Text,
   View,
 } from "react-native";
-type Book = {
+
+export type Book = {
   id: number;
   title: string;
   author: string;
@@ -21,10 +22,39 @@ type Book = {
 
 type BookCardProps = {
   book: Book;
+  showDelete?: boolean;
+  showSwap?: boolean;
+  showRequest?: boolean;
+  onRequest?: (book: Book) => void;
+  onDelete?: (book: Book) => void;
+  onSwap?: (book: Book) => void;
 };
 
-export default function BookCard({ book }: BookCardProps) {
+export default function BookCard({
+  book,
+  showDelete = false,
+  showSwap = false,
+  showRequest = false,
+  onRequest,
+  onDelete,
+  onSwap,
+}: BookCardProps) {
   const [modalVisible, setModalVisible] = useState(false);
+
+  const handleRequest = () => {
+    onRequest?.(book);
+    setModalVisible(false);
+  };
+
+  const handleDelete = () => {
+    onDelete?.(book);
+    setModalVisible(false);
+  };
+
+  const handleSwap = () => {
+    onSwap?.(book);
+    setModalVisible(false);
+  };
 
   return (
     <>
@@ -42,23 +72,38 @@ export default function BookCard({ book }: BookCardProps) {
               <Text style={styles.closeText}>✕</Text>
             </Pressable>
 
-            <ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.title}>{book.title}</Text>
               <Text style={styles.author}>{book.author}</Text>
 
               <Image source={{ uri: book.cover }} style={styles.modalImage} />
-              <View style={styles.iconRow}>
-                <Pressable onPress={() => {}}>
-                  <Ionicons
-                    name="swap-horizontal-outline"
-                    size={28}
-                    color="black"
-                  />
-                </Pressable>
 
-                <Pressable onPress={() => {}}>
-                  <Ionicons name="trash-outline" size={28} color="black" />
-                </Pressable>
+              <View style={styles.iconRow}>
+                {showSwap && (
+                  <Pressable onPress={handleSwap}>
+                    <Ionicons
+                      name="swap-horizontal-outline"
+                      size={28}
+                      color="black"
+                    />
+                  </Pressable>
+                )}
+
+                {showDelete && (
+                  <Pressable onPress={handleDelete}>
+                    <Ionicons name="trash-outline" size={28} color="black" />
+                  </Pressable>
+                )}
+
+                {showRequest && (
+                  <Pressable onPress={handleRequest}>
+                    <Ionicons
+                      name="arrow-redo-outline"
+                      size={28}
+                      color="black"
+                    />
+                  </Pressable>
+                )}
               </View>
 
               <Text style={styles.meta}>
@@ -93,6 +138,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 16,
   },
 
   modalCard: {
@@ -120,6 +166,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 4,
+    paddingTop: 10,
   },
 
   author: {
@@ -148,6 +195,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: "center",
   },
+
   iconRow: {
     flexDirection: "row",
     justifyContent: "center",

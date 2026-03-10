@@ -5,24 +5,29 @@ import {
   Text,
   View,
 } from "react-native";
-import BookCard from "./BookCard";
-
-type Book = {
-  id: number;
-  title: string;
-  author: string;
-  genre: string;
-  year: number;
-  description: string;
-  cover: string;
-};
+import BookCard, { Book } from "./BookCard";
 
 type BookListProps = {
   books: Book[];
   isLoading: boolean;
+  showDelete?: boolean;
+  showSwap?: boolean;
+  showRequest?: boolean;
+  onRequest?: (book: Book) => void;
+  onDelete?: (book: Book) => void;
+  onSwap?: (book: Book) => void;
 };
 
-export default function BookList({ books, isLoading }: BookListProps) {
+export default function BookList({
+  books,
+  isLoading,
+  showDelete = false,
+  showSwap = false,
+  showRequest = false,
+  onRequest,
+  onDelete,
+  onSwap,
+}: BookListProps) {
   if (isLoading) {
     return (
       <View style={styles.stateContainer}>
@@ -39,6 +44,7 @@ export default function BookList({ books, isLoading }: BookListProps) {
       </View>
     );
   }
+
   return (
     <FlatList
       data={books}
@@ -46,7 +52,18 @@ export default function BookList({ books, isLoading }: BookListProps) {
       numColumns={2}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.container}
-      renderItem={({ item }) => <BookCard book={item} />}
+      showsVerticalScrollIndicator={false}
+      renderItem={({ item }) => (
+        <BookCard
+          book={item}
+          showDelete={showDelete}
+          showSwap={showSwap}
+          showRequest={showRequest}
+          onRequest={onRequest}
+          onDelete={onDelete}
+          onSwap={onSwap}
+        />
+      )}
     />
   );
 }
