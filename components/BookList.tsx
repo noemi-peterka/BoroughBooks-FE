@@ -8,17 +8,8 @@ import {
   Text,
   View,
 } from "react-native";
+import type { Book } from "../data/books";
 import BookCard from "./BookCard";
-
-type Book = {
-  id: number;
-  title: string;
-  author: string;
-  genre: string;
-  year: number;
-  description: string;
-  cover: string;
-};
 
 type LibraryItem = { type: "add"; id: string } | ({ type: "book" } & Book);
 
@@ -34,19 +25,12 @@ export default function BookList({
   showAddTile = false,
 }: BookListProps) {
   const router = useRouter();
+
   if (isLoading) {
     return (
       <View style={styles.stateContainer}>
         <ActivityIndicator size="large" />
         <Text style={styles.stateText}>Loading books...</Text>
-      </View>
-    );
-  }
-
-  if (books.length === 0) {
-    return (
-      <View style={styles.stateContainer}>
-        <Text style={styles.stateText}>No books found.</Text>
       </View>
     );
   }
