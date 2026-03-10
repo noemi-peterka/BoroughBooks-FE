@@ -1,21 +1,13 @@
+
 import { useEffect, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import BookList from "../../components/BookList";
 import { books as mockBooks } from "../../data/books";
 import type { Book } from "../../components/BookCard";
+import { useBooks } from "../../context/BooksContext";
 
 export default function Library() {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setBooks(mockBooks);
-      setIsLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, []);
+  const { books } = useBooks();
 
   const handleDeleteBook = (book: Book) => {
     setBooks((prevBooks) => prevBooks.filter((item) => item.id !== book.id));
@@ -34,6 +26,7 @@ export default function Library() {
         showSwap={true}
         onDelete={handleDeleteBook}
         onSwap={handleLendBook}
+        showAddTile 
       />
     </View>
   );

@@ -1,4 +1,4 @@
-export interface Book {
+export type Book = {
   id: number;
   title: string;
   author: string;
@@ -6,7 +6,7 @@ export interface Book {
   year: number;
   cover: string;
   description: string;
-}
+};
 
 export const books: Book[] = [
   {
