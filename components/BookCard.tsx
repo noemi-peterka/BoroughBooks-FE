@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   Image,
@@ -8,7 +9,6 @@ import {
   Text,
   View,
 } from "react-native";
-
 type Book = {
   id: number;
   title: string;
@@ -47,6 +47,19 @@ export default function BookCard({ book }: BookCardProps) {
               <Text style={styles.author}>{book.author}</Text>
 
               <Image source={{ uri: book.cover }} style={styles.modalImage} />
+              <View style={styles.iconRow}>
+                <Pressable onPress={() => {}}>
+                  <Ionicons
+                    name="swap-horizontal-outline"
+                    size={28}
+                    color="black"
+                  />
+                </Pressable>
+
+                <Pressable onPress={() => {}}>
+                  <Ionicons name="trash-outline" size={28} color="black" />
+                </Pressable>
+              </View>
 
               <Text style={styles.meta}>
                 {book.genre} • {book.year}
@@ -134,5 +147,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
+  },
+  iconRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 30,
+    marginVertical: 10,
   },
 });
