@@ -49,14 +49,6 @@ export default function FriendsScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>My friends</Text>
-
-          <TouchableOpacity>
-            <Ionicons name="menu" size={32} color="#111" />
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.searchWrapper}>
           <Ionicons name="search-outline" size={18} color="#7A7A7A" />
           <TextInput
