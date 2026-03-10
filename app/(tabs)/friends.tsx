@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { FriendList } from "../../components/FriendList";
 
@@ -33,28 +40,28 @@ const friends = [
 ];
 
 export default function FriendsScreen() {
+  const [search, setSearch] = useState("");
+
+  const filteredFriends = friends.filter((friend) =>
+    friend.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <View style={styles.screen}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>My friends</Text>
-
-          <TouchableOpacity>
-            <Ionicons name="menu" size={32} color="#111" />
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.searchWrapper}>
           <Ionicons name="search-outline" size={18} color="#7A7A7A" />
           <TextInput
             placeholder="Search"
             placeholderTextColor="#7A7A7A"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
-          <Ionicons name="mic-outline" size={18} color="#7A7A7A" />
+          
         </View>
 
-        <FriendList friends={friends} />
+        <FriendList friends={filteredFriends} />
       </View>
     </View>
   );
