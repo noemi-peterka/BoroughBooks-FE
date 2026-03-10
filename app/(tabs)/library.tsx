@@ -1,14 +1,12 @@
-import { Link } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import BookList from "../../components/BookList";
+import { books } from "../../data/books";
 
 export default function Library() {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.text}>Library screen</Text>
-        <Link href="/friends" style={styles.button}>
-          Go to friends screen
-        </Link>
+        <BookList books={books} />
       </View>
     </>
   );
