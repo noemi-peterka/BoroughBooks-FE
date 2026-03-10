@@ -1,17 +1,44 @@
-import { FlatList, Image, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import BookCard from "./BookCard";
 
 type Book = {
   id: number;
   title: string;
   author: string;
+  genre: string;
+  year: number;
+  description: string;
   cover: string;
 };
 
 type BookListProps = {
   books: Book[];
+  isLoading: boolean;
 };
 
-export default function BookList({ books }: BookListProps) {
+export default function BookList({ books, isLoading }: BookListProps) {
+  if (isLoading) {
+    return (
+      <View style={styles.stateContainer}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.stateText}>Loading books...</Text>
+      </View>
+    );
+  }
+
+  if (books.length === 0) {
+    return (
+      <View style={styles.stateContainer}>
+        <Text style={styles.stateText}>No books found.</Text>
+      </View>
+    );
+  }
   return (
     <FlatList
       data={books}
@@ -19,15 +46,7 @@ export default function BookList({ books }: BookListProps) {
       numColumns={2}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.container}
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          <Image
-            source={{ uri: item.cover }}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        </View>
-      )}
+      renderItem={({ item }) => <BookCard book={item} />}
     />
   );
 }
@@ -42,16 +61,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
-  card: {
-    width: "48%",
-    marginVertical: 10,
-    borderRadius: 10,
-    overflow: "hidden",
+  stateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
   },
 
-  image: {
-    width: "100%",
-    height: 250,
-    borderRadius: 8,
+  stateText: {
+    marginTop: 12,
+    fontSize: 16,
   },
 });
