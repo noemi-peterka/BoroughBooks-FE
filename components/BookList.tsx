@@ -8,23 +8,41 @@ import {
   Text,
   View,
 } from "react-native";
+
 import type { Book } from "../data/books";
 import BookCard from "./BookCard";
 
 type LibraryItem = { type: "add"; id: string } | ({ type: "book" } & Book);
 
+
 type BookListProps = {
   books: Book[];
   isLoading: boolean;
+
+  showDelete?: boolean;
+  showSwap?: boolean;
+  showRequest?: boolean;
+  onRequest?: (book: Book) => void;
+  onDelete?: (book: Book) => void;
+  onSwap?: (book: Book) => void;
+
   showAddTile?: boolean;
+
 };
 
 export default function BookList({
   books,
   isLoading,
+  showDelete = false,
+  showSwap = false,
+  showRequest = false,
+  onRequest,
+  onDelete,
+  onSwap,
   showAddTile = false,
 }: BookListProps) {
   const router = useRouter();
+
 
   if (isLoading) {
     return (
@@ -35,12 +53,21 @@ export default function BookList({
     );
   }
 
+
+  if (books.length === 0) {
+    return (
+      <View style={styles.stateContainer}>
+        <Text style={styles.stateText}>No books found.</Text>
+      </View>
+    );
+  }
   const data: LibraryItem[] = showAddTile
     ? [
         { type: "add", id: "add-tile" },
         ...books.map((book) => ({ ...book, type: "book" as const })),
       ]
     : books.map((book) => ({ ...book, type: "book" as const }));
+
 
   return (
     <FlatList
@@ -49,6 +76,20 @@ export default function BookList({
       numColumns={2}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.container}
+
+      showsVerticalScrollIndicator={false}
+      renderItem={({ item }) => (
+        <BookCard
+          book={item}
+          showDelete={showDelete}
+          showSwap={showSwap}
+          showRequest={showRequest}
+          onRequest={onRequest}
+          onDelete={onDelete}
+          onSwap={onSwap}
+        />
+      )}
+
       renderItem={({ item }) => {
         if (item.type === "add") {
           return (
@@ -65,6 +106,7 @@ export default function BookList({
 
         return <BookCard book={item} />;
       }}
+
     />
   );
 }

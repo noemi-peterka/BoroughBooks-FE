@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
 import { FriendList } from "../../components/FriendList";
 
 const friends = [
@@ -43,12 +44,24 @@ export default function FriendsScreen() {
   const [search, setSearch] = useState("");
 
   const filteredFriends = friends.filter((friend) =>
-    friend.name.toLowerCase().includes(search.toLowerCase())
+    friend.name.toLowerCase().includes(search.trim().toLowerCase())
   );
+
+  const handleFriendPress = (id: string) => {
+    router.push(`/friend/${id}`);
+  };
 
   return (
     <View style={styles.screen}>
       <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>My friends</Text>
+
+          <TouchableOpacity>
+            <Ionicons name="menu" size={32} color="#111" />
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.searchWrapper}>
           <Ionicons name="search-outline" size={18} color="#7A7A7A" />
           <TextInput
@@ -58,10 +71,17 @@ export default function FriendsScreen() {
             value={search}
             onChangeText={setSearch}
           />
-          
+          {search.length > 0 && (
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color="#7A7A7A"
+              onPress={() => setSearch("")}
+            />
+          )}
         </View>
 
-        <FriendList friends={filteredFriends} />
+        <FriendList friends={filteredFriends} onFriendPress={handleFriendPress} />
       </View>
     </View>
   );
