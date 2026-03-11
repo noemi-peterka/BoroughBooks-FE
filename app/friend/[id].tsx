@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  Modal,
+  Pressable,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
@@ -71,6 +72,7 @@ export default function FriendLibraryScreen() {
   const [search, setSearch] = useState("");
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const friend = friends.find((item) => item.id === id);
 
@@ -91,8 +93,20 @@ export default function FriendLibraryScreen() {
     );
   }, [books, search]);
 
-  const handleRequestBook = (book: Book) => {
-    Alert.alert("Request sent", `You requested "${book.title}"`);
+  const handleRequestBook = () => {
+    setMenuVisible(false);
+    router.push({
+      pathname: "/chat/[id]",
+      params: { id: id ?? "" },
+    });
+  };
+
+  const handleOpenMessage = () => {
+    setMenuVisible(false);
+    router.push({
+      pathname: "/chat/[id]",
+      params: { id: id ?? "" },
+    });
   };
 
   return (
@@ -100,15 +114,18 @@ export default function FriendLibraryScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
           <Ionicons name="chevron-back" size={32} color="#111" />
         </TouchableOpacity>
 
-        <Text style={styles.title}>
+        <Text style={styles.title} numberOfLines={1}>
           {friend ? `${friend.name}'s library` : "Friend's library"}
         </Text>
 
-        <TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setMenuVisible(true)}
+          style={styles.iconButton}
+        >
           <Ionicons name="menu" size={30} color="#111" />
         </TouchableOpacity>
       </View>
@@ -142,6 +159,21 @@ export default function FriendLibraryScreen() {
           onRequest={handleRequestBook}
         />
       </View>
+
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <Pressable style={styles.overlay} onPress={() => setMenuVisible(false)}>
+          <View style={styles.menu}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleOpenMessage}>
+              <Text style={styles.menuText}>Message</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -155,16 +187,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
     marginBottom: 16,
+  },
+  iconButton: {
+    width: 36,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     flex: 1,
     fontSize: 22,
     fontWeight: "700",
     color: "#111",
-    marginLeft: 8,
+    marginHorizontal: 8,
   },
   searchWrapper: {
     flexDirection: "row",
@@ -184,5 +220,31 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+  menu: {
+    position: "absolute",
+    top: 90,
+    right: 16,
+    width: 140,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingVertical: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  menuItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  menuText: {
+    fontSize: 16,
+    color: "#111",
   },
 });
