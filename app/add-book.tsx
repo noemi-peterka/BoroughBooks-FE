@@ -2,26 +2,56 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
+  FlatList,
   Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from "react-native";
 import CoverCamera from "../components/CoverCamera";
+import ISBNScanner from "../components/ISBNScanner";
 import { useBooks } from "../context/BooksContext";
+
+import Ionicons from "@expo/vector-icons/Ionicons";
+
+type GoogleBookItem = {
+  id: string;
+  volumeInfo?: {
+    title?: string;
+    authors?: string[];
+    categories?: string[];
+    publishedDate?: string;
+    description?: string;
+    imageLinks?: {
+      thumbnail?: string;
+      smallThumbnail?: string;
+    };
+    industryIdentifiers?: {
+      type?: string;
+      identifier?: string;
+    }[];
+  };
+};
 
 export default function AddBookScreen() {
   const { addBook } = useBooks();
 
   const [showCamera, setShowCamera] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState("");
   const [year, setYear] = useState("");
   const [cover, setCover] = useState("");
   const [description, setDescription] = useState("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<GoogleBookItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const resetForm = () => {
     setTitle("");
@@ -31,19 +61,96 @@ export default function AddBookScreen() {
     setCover("");
     setDescription("");
     setShowCamera(false);
+    setShowScanner(false);
+    setSearchQuery("");
+    setSearchResults([]);
   };
 
-  if (showCamera) {
-    return (
-      <CoverCamera
-        onCapture={(uri) => {
-          setCover(uri);
-          setShowCamera(false);
-        }}
-        onCancel={() => setShowCamera(false)}
-      />
+  const autofillForm = (book: GoogleBookItem) => {
+    const info = book.volumeInfo;
+
+    if (!info) return;
+
+    setTitle(info.title || "");
+    setAuthor(info.authors?.join(", ") || "");
+    setGenre(info.categories?.[0] || "");
+    setDescription(info.description || "");
+    setCover(
+      info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || "",
     );
-  }
+
+    const publishedDate = info.publishedDate || "";
+    const parsedYear = publishedDate.slice(0, 4);
+    setYear(/^\d{4}$/.test(parsedYear) ? parsedYear : "");
+
+    setSearchResults([]);
+    setSearchQuery(info.title || "");
+  };
+
+  const searchGoogleBooks = async (query: string) => {
+    const trimmed = query.trim();
+
+    if (!trimmed) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+
+      const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(trimmed)}&maxResults=10`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch books");
+      }
+
+      const data = await response.json();
+      setSearchResults(data.items || []);
+    } catch (error) {
+      console.error("Google Books search error:", error);
+      Alert.alert("Search failed", "Could not fetch books right now.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const searchByISBN = async (isbn: string) => {
+    try {
+      setIsSearching(true);
+
+      const cleanISBN = isbn.replace(/[^0-9Xx]/g, "");
+
+      const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(cleanISBN)}`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch ISBN result");
+      }
+
+      const data = await response.json();
+      const firstMatch = data.items?.[0];
+
+      if (!firstMatch) {
+        Alert.alert(
+          "No match found",
+          `No Google Books result found for ISBN ${cleanISBN}.`,
+        );
+        return;
+      }
+
+      autofillForm(firstMatch);
+      Alert.alert("Book found", "Form auto-filled from barcode scan.");
+    } catch (error) {
+      console.error("ISBN search error:", error);
+      Alert.alert("Lookup failed", "Could not fetch book data from ISBN.");
+    } finally {
+      setIsSearching(false);
+      setShowScanner(false);
+    }
+  };
 
   const handleAddBook = () => {
     if (!title.trim() || !author.trim()) {
@@ -66,21 +173,93 @@ export default function AddBookScreen() {
     resetForm();
     router.back();
   };
+
+  if (showCamera) {
+    return (
+      <CoverCamera
+        onCapture={(uri) => {
+          setCover(uri);
+          setShowCamera(false);
+        }}
+        onCancel={() => setShowCamera(false)}
+      />
+    );
+  }
+
+  if (showScanner) {
+    return (
+      <ISBNScanner
+        onScanned={searchByISBN}
+        onCancel={() => setShowScanner(false)}
+      />
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.heading}>Add Book</Text>
 
+      <View style={styles.searchWrapper}>
+        <Ionicons name="search-outline" size={18} color="#7A7A7A" />
+
+        <TextInput
+          placeholder={isSearching ? "Searching..." : "Search by title"}
+          placeholderTextColor="#7A7A7A"
+          style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onSubmitEditing={() => searchGoogleBooks(searchQuery)}
+          returnKeyType="search"
+        />
+
+        {searchQuery.length > 0 && (
+          <Ionicons
+            name="close-circle"
+            size={18}
+            color="#7A7A7A"
+            onPress={() => setSearchQuery("")}
+          />
+        )}
+      </View>
+
+      <Pressable style={styles.scanButton} onPress={() => setShowScanner(true)}>
+        <Text style={styles.scanButtonText}>Scan Barcode</Text>
+      </Pressable>
+
+      {searchResults.length > 0 && (
+        <View style={styles.resultsContainer}>
+          <FlatList
+            data={searchResults}
+            keyExtractor={(item) => item.id}
+            scrollEnabled={false}
+            renderItem={({ item }) => {
+              const info = item.volumeInfo;
+              return (
+                <Pressable
+                  style={styles.resultCard}
+                  onPress={() => autofillForm(item)}
+                >
+                  <Text style={styles.resultTitle}>
+                    {info?.title || "Untitled"}
+                  </Text>
+                  <Text style={styles.resultAuthor}>
+                    {info?.authors?.join(", ") || "Unknown author"}
+                  </Text>
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+      )}
+
       {cover.trim() ? (
         <Image source={{ uri: cover }} style={styles.coverPreview} />
       ) : (
-        <Pressable
-          style={styles.fallbackCover}
-          onPress={() => setShowCamera(true)}
-        >
+        <View style={styles.fallbackCover}>
           <Text style={styles.fallbackTitle}>
             {title.trim() || "Book Title"}
           </Text>
-        </Pressable>
+        </View>
       )}
 
       <TextInput
@@ -119,6 +298,7 @@ export default function AddBookScreen() {
         onChangeText={setDescription}
         multiline
       />
+
       <TextInput
         style={styles.input}
         placeholder="Cover image URL"
@@ -151,24 +331,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 20,
   },
-  coverPreview: {
-    width: 140,
-    height: 200,
-    borderRadius: 10,
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  cameraButton: {
-    backgroundColor: "#e5e5e5",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  cameraButtonText: {
-    fontWeight: "600",
-    color: "#111",
-  },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -177,21 +339,53 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 14,
   },
-  textArea: {
-    minHeight: 120,
-    textAlignVertical: "top",
-  },
-  saveButton: {
-    backgroundColor: "#000",
-    padding: 16,
-    borderRadius: 10,
+  searchButton: {
+    backgroundColor: "#2d6cdf",
+    padding: 12,
+    borderRadius: 8,
     alignItems: "center",
-    marginTop: 10,
+    marginBottom: 12,
   },
-  saveButtonText: {
+  searchButtonText: {
     color: "#fff",
     fontWeight: "600",
-    fontSize: 16,
+  },
+  scanButton: {
+    backgroundColor: "#444",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  scanButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  resultsContainer: {
+    marginBottom: 16,
+  },
+  resultCard: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e2e2e2",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  resultTitle: {
+    fontWeight: "700",
+    fontSize: 15,
+    marginBottom: 4,
+  },
+  resultAuthor: {
+    color: "#666",
+  },
+  coverPreview: {
+    width: 140,
+    height: 200,
+    borderRadius: 10,
+    alignSelf: "center",
+    marginBottom: 16,
   },
   fallbackCover: {
     width: 140,
@@ -209,5 +403,48 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     textAlign: "center",
+  },
+  cameraButton: {
+    backgroundColor: "#e5e5e5",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  cameraButtonText: {
+    fontWeight: "600",
+    color: "#111",
+  },
+  textArea: {
+    minHeight: 120,
+    textAlignVertical: "top",
+  },
+  saveButton: {
+    backgroundColor: "#000",
+    padding: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E9E9E9",
+    borderRadius: 18,
+    paddingHorizontal: 10,
+    height: 38,
+    marginBottom: 16,
+  },
+
+  searchInput: {
+    flex: 1,
+    marginHorizontal: 8,
+    fontSize: 14,
+    color: "#111",
   },
 });
