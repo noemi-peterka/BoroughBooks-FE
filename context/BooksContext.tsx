@@ -1,11 +1,8 @@
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
-import { books as mockBooks } from "../data/books";
+import { createContext, ReactNode, useContext, useMemo, useState } from "react";
+import { books as mockLibraryBooks } from "../data/books";
+import { borrowedBooks as mockBorrowedBooks } from "../data/borrowedBooks";
+import { lentBooks as mockLentBooks } from "../data/lentBooks";
+import { wishlistBooks as mockWishlistBooks } from "../data/wishlistBooks";
 
 export type User = {
   id: string;
@@ -57,6 +54,8 @@ export type ChatMessage = {
   loanId?: string;
 };
 
+export type CollectionType = "library" | "wishlist" | "borrowed" | "lent";
+
 type BooksContextType = {
   users: User[];
   currentUserId: string;
@@ -67,8 +66,13 @@ type BooksContextType = {
   loans: Loan[];
   messages: ChatMessage[];
 
-  addBook: (book: NewBook) => void;
-  deleteBook: (id: number) => void;
+  libraryBooks: Book[];
+  wishlistBooks: Book[];
+  borrowedBooks: Book[];
+  lentBooks: Book[];
+
+  addBook: (collection: CollectionType, book: NewBook) => void;
+  deleteBook: (collection: CollectionType, id: number) => void;
 
   requestBook: (params: { bookId: number; ownerId: string }) => void;
   approveLoan: (loanId: string) => void;
@@ -100,13 +104,28 @@ const users: User[] = [
   },
 ];
 
-const initialBooks: Book[] = [
-  ...mockBooks.map((book, index) => ({
+const normalizeBooks = (
+  books: Array<{
+    id: number;
+    title: string;
+    author: string;
+    genre: string;
+    year: number;
+    cover?: string;
+    description: string;
+  }>,
+  ownerId: string,
+  status: BookStatus
+): Book[] =>
+  books.map((book, index) => ({
     ...book,
-    ownerId: "u1",
-    status: "available" as BookStatus,
     id: book.id || index + 1,
-  })),
+    ownerId,
+    status,
+  }));
+
+const initialBooks: Book[] = [
+  ...normalizeBooks(mockLibraryBooks, "u1", "available"),
   {
     id: 1001,
     title: "The Hobbit",
@@ -131,9 +150,34 @@ const initialBooks: Book[] = [
   },
 ];
 
+const initialWishlistBooks: Book[] = normalizeBooks(
+  mockWishlistBooks,
+  "u1",
+  "available"
+);
+
+const initialManualBorrowedBooks: Book[] = normalizeBooks(
+  mockBorrowedBooks,
+  "u2",
+  "lent"
+);
+
+const initialManualLentBooks: Book[] = normalizeBooks(
+  mockLentBooks,
+  "u1",
+  "lent"
+);
+
 export function BooksProvider({ children }: { children: ReactNode }) {
   const [currentUserId, setCurrentUserId] = useState("u1");
   const [books, setBooks] = useState<Book[]>(initialBooks);
+  const [wishlistBooks, setWishlistBooks] =
+    useState<Book[]>(initialWishlistBooks);
+  const [manualBorrowedBooks, setManualBorrowedBooks] = useState<Book[]>(
+    initialManualBorrowedBooks
+  );
+  const [manualLentBooks, setManualLentBooks] =
+    useState<Book[]>(initialManualLentBooks);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
@@ -145,20 +189,97 @@ export function BooksProvider({ children }: { children: ReactNode }) {
       minute: "2-digit",
     });
 
-  const addBook = (book: NewBook) => {
-    setBooks((currentBooks) => [
-      {
-        id: Date.now(),
-        ...book,
-        ownerId: currentUserId,
-        status: "available",
-      },
-      ...currentBooks,
-    ]);
+  const getMyAvailableBooks = () =>
+    books.filter(
+      (book) => book.ownerId === currentUserId && book.status === "available"
+    );
+
+  const getFriendAvailableBooks = (friendId: string) =>
+    books.filter(
+      (book) => book.ownerId === friendId && book.status === "available"
+    );
+
+  const getBorrowedBooks = () => {
+    const borrowedBookIds = loans
+      .filter(
+        (loan) =>
+          loan.borrowerId === currentUserId && loan.status === "borrowed"
+      )
+      .map((loan) => loan.bookId);
+
+    const loanBorrowedBooks = books.filter((book) =>
+      borrowedBookIds.includes(book.id)
+    );
+
+    return [...manualBorrowedBooks, ...loanBorrowedBooks];
   };
 
-  const deleteBook = (id: number) => {
-    setBooks((currentBooks) => currentBooks.filter((book) => book.id !== id));
+  const getLentBooks = () => {
+    const lentBookIds = loans
+      .filter(
+        (loan) => loan.ownerId === currentUserId && loan.status === "borrowed"
+      )
+      .map((loan) => loan.bookId);
+
+    const loanLentBooks = books.filter((book) => lentBookIds.includes(book.id));
+
+    return [...manualLentBooks, ...loanLentBooks];
+  };
+
+  const libraryBooks = getMyAvailableBooks();
+  const borrowedBooks = getBorrowedBooks();
+  const lentBooks = getLentBooks();
+
+  const addBook = (collection: CollectionType, book: NewBook) => {
+    const newBook: Book = {
+      id: Date.now(),
+      ...book,
+      ownerId:
+        collection === "borrowed"
+          ? "u2"
+          : currentUserId,
+      status: collection === "library" || collection === "wishlist"
+        ? "available"
+        : "lent",
+    };
+
+    switch (collection) {
+      case "library":
+        setBooks((currentBooks) => [newBook, ...currentBooks]);
+        break;
+      case "wishlist":
+        setWishlistBooks((currentBooks) => [newBook, ...currentBooks]);
+        break;
+      case "borrowed":
+        setManualBorrowedBooks((currentBooks) => [newBook, ...currentBooks]);
+        break;
+      case "lent":
+        setManualLentBooks((currentBooks) => [newBook, ...currentBooks]);
+        break;
+    }
+  };
+
+  const deleteBook = (collection: CollectionType, id: number) => {
+    switch (collection) {
+      case "library":
+        setBooks((currentBooks) => currentBooks.filter((book) => book.id !== id));
+        break;
+      case "wishlist":
+        setWishlistBooks((currentBooks) =>
+          currentBooks.filter((book) => book.id !== id)
+        );
+        break;
+      case "borrowed":
+        setManualBorrowedBooks((currentBooks) =>
+          currentBooks.filter((book) => book.id !== id)
+        );
+        break;
+      case "lent":
+        setManualLentBooks((currentBooks) =>
+          currentBooks.filter((book) => book.id !== id)
+        );
+        break;
+    }
   };
 
   const requestBook = ({
@@ -328,44 +449,15 @@ export function BooksProvider({ children }: { children: ReactNode }) {
   };
 
   const getBookById = (bookId?: number) =>
-    books.find((book) => book.id === bookId);
+    [...books, ...wishlistBooks, ...manualBorrowedBooks, ...manualLentBooks].find(
+      (book) => book.id === bookId
+    );
 
   const getLoanById = (loanId?: string) =>
     loans.find((loan) => loan.id === loanId);
 
   const getMessagesForFriend = (friendId: string) =>
     messages.filter((message) => message.friendId === friendId);
-
-  const getMyAvailableBooks = () =>
-    books.filter(
-      (book) => book.ownerId === currentUserId && book.status === "available"
-    );
-
-  const getFriendAvailableBooks = (friendId: string) =>
-    books.filter(
-      (book) => book.ownerId === friendId && book.status === "available"
-    );
-
-  const getBorrowedBooks = () => {
-    const borrowedBookIds = loans
-      .filter(
-        (loan) =>
-          loan.borrowerId === currentUserId && loan.status === "borrowed"
-      )
-      .map((loan) => loan.bookId);
-
-    return books.filter((book) => borrowedBookIds.includes(book.id));
-  };
-
-  const getLentBooks = () => {
-    const lentBookIds = loans
-      .filter(
-        (loan) => loan.ownerId === currentUserId && loan.status === "borrowed"
-      )
-      .map((loan) => loan.bookId);
-
-    return books.filter((book) => lentBookIds.includes(book.id));
-  };
 
   const value = useMemo(
     () => ({
@@ -376,6 +468,10 @@ export function BooksProvider({ children }: { children: ReactNode }) {
       books,
       loans,
       messages,
+      libraryBooks,
+      wishlistBooks,
+      borrowedBooks,
+      lentBooks,
       addBook,
       deleteBook,
       requestBook,
@@ -390,7 +486,17 @@ export function BooksProvider({ children }: { children: ReactNode }) {
       getBorrowedBooks,
       getLentBooks,
     }),
-    [currentUserId, currentUser, books, loans, messages]
+    [
+      currentUserId,
+      currentUser,
+      books,
+      loans,
+      messages,
+      libraryBooks,
+      wishlistBooks,
+      borrowedBooks,
+      lentBooks,
+    ]
   );
 
   return (

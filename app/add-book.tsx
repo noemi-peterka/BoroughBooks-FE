@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import CoverCamera from "../components/CoverCamera";
 import ISBNScanner from "../components/ISBNScanner";
-import { useBooks } from "../context/BooksContext";
+import { CollectionType, useBooks } from "../context/BooksContext";
 
 type GoogleBookItem = {
   id: string;
@@ -38,6 +38,16 @@ type GoogleBookItem = {
 
 export default function AddBookScreen() {
   const { addBook } = useBooks();
+  const params = useLocalSearchParams<{ collection?: string }>();
+
+  const collectionParam = params.collection;
+  const targetCollection: CollectionType =
+    collectionParam === "wishlist" ||
+    collectionParam === "borrowed" ||
+    collectionParam === "lent" ||
+    collectionParam === "library"
+      ? collectionParam
+      : "library";
 
   const [showCamera, setShowCamera] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -161,7 +171,7 @@ export default function AddBookScreen() {
       return;
     }
 
-    addBook({
+    addBook(targetCollection, {
       title: title.trim(),
       author: author.trim(),
       genre: genre.trim() || "Unknown",
@@ -171,8 +181,21 @@ export default function AddBookScreen() {
     });
 
     resetForm();
+    router.push({
+      pathname: "/add-book",
+      params: { collection: "wishlist" },
+    });
     router.back();
   };
+
+  const screenTitle =
+    targetCollection === "library"
+      ? "Add Book to Library"
+      : targetCollection === "wishlist"
+        ? "Add Book to Wishlist"
+        : targetCollection === "borrowed"
+          ? "Add Book to Borrowed"
+          : "Add Book to Lent";
 
   if (showCamera) {
     return (
@@ -198,7 +221,7 @@ export default function AddBookScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.heading}>Add Book</Text>
+        <Text style={styles.heading}>{screenTitle}</Text>
 
         <View style={styles.searchWrapper}>
           <Ionicons name="search-outline" size={18} color="#7A7A7A" />
@@ -218,7 +241,10 @@ export default function AddBookScreen() {
               name="close-circle"
               size={18}
               color="#7A7A7A"
-              onPress={() => setSearchQuery("")}
+              onPress={() => {
+                setSearchQuery("");
+                setSearchResults([]);
+              }}
             />
           )}
         </View>
@@ -238,6 +264,7 @@ export default function AddBookScreen() {
               scrollEnabled={false}
               renderItem={({ item }) => {
                 const info = item.volumeInfo;
+
                 return (
                   <Pressable
                     style={styles.resultCard}
@@ -299,6 +326,7 @@ export default function AddBookScreen() {
           value={cover}
           onChangeText={setCover}
         />
+
         {cover.trim() ? (
           <Image source={{ uri: cover }} style={styles.coverPreview} />
         ) : (
@@ -342,17 +370,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 14,
-  },
-  searchButton: {
-    backgroundColor: "#2d6cdf",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  searchButtonText: {
-    color: "#fff",
-    fontWeight: "600",
   },
   scanButton: {
     backgroundColor: "#444",
@@ -444,7 +461,6 @@ const styles = StyleSheet.create({
     height: 38,
     marginBottom: 16,
   },
-
   searchInput: {
     flex: 1,
     marginHorizontal: 8,
