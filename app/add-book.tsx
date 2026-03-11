@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -11,11 +12,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import CoverCamera from "../components/CoverCamera";
 import ISBNScanner from "../components/ISBNScanner";
 import { useBooks } from "../context/BooksContext";
-
-import Ionicons from "@expo/vector-icons/Ionicons";
 
 type GoogleBookItem = {
   id: string;
@@ -196,127 +196,131 @@ export default function AddBookScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Add Book</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.heading}>Add Book</Text>
 
-      <View style={styles.searchWrapper}>
-        <Ionicons name="search-outline" size={18} color="#7A7A7A" />
+        <View style={styles.searchWrapper}>
+          <Ionicons name="search-outline" size={18} color="#7A7A7A" />
+
+          <TextInput
+            placeholder={isSearching ? "Searching..." : "Search by title"}
+            placeholderTextColor="#7A7A7A"
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={() => searchGoogleBooks(searchQuery)}
+            returnKeyType="search"
+          />
+
+          {searchQuery.length > 0 && (
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color="#7A7A7A"
+              onPress={() => setSearchQuery("")}
+            />
+          )}
+        </View>
+
+        <Pressable
+          style={styles.scanButton}
+          onPress={() => setShowScanner(true)}
+        >
+          <Text style={styles.scanButtonText}>Scan Barcode</Text>
+        </Pressable>
+
+        {searchResults.length > 0 && (
+          <View style={styles.resultsContainer}>
+            <FlatList
+              data={searchResults}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              renderItem={({ item }) => {
+                const info = item.volumeInfo;
+                return (
+                  <Pressable
+                    style={styles.resultCard}
+                    onPress={() => autofillForm(item)}
+                  >
+                    <Text style={styles.resultTitle}>
+                      {info?.title || "Untitled"}
+                    </Text>
+                    <Text style={styles.resultAuthor}>
+                      {info?.authors?.join(", ") || "Unknown author"}
+                    </Text>
+                  </Pressable>
+                );
+              }}
+            />
+          </View>
+        )}
 
         <TextInput
-          placeholder={isSearching ? "Searching..." : "Search by title"}
-          placeholderTextColor="#7A7A7A"
-          style={styles.searchInput}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={() => searchGoogleBooks(searchQuery)}
-          returnKeyType="search"
+          style={styles.input}
+          placeholder="Book title"
+          value={title}
+          onChangeText={setTitle}
         />
 
-        {searchQuery.length > 0 && (
-          <Ionicons
-            name="close-circle"
-            size={18}
-            color="#7A7A7A"
-            onPress={() => setSearchQuery("")}
-          />
+        <TextInput
+          style={styles.input}
+          placeholder="Author"
+          value={author}
+          onChangeText={setAuthor}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Genre"
+          value={genre}
+          onChangeText={setGenre}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Year"
+          value={year}
+          onChangeText={setYear}
+          keyboardType="numeric"
+        />
+
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="Description"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Cover image URL"
+          value={cover}
+          onChangeText={setCover}
+        />
+        {cover.trim() ? (
+          <Image source={{ uri: cover }} style={styles.coverPreview} />
+        ) : (
+          <View style={styles.fallbackCover}>
+            <Text style={styles.fallbackTitle}>
+              {title.trim() || "Book Title"}
+            </Text>
+          </View>
         )}
-      </View>
 
-      <Pressable style={styles.scanButton} onPress={() => setShowScanner(true)}>
-        <Text style={styles.scanButtonText}>Scan Barcode</Text>
-      </Pressable>
+        <Pressable
+          style={styles.cameraButton}
+          onPress={() => setShowCamera(true)}
+        >
+          <Text style={styles.cameraButtonText}>Take cover photo</Text>
+        </Pressable>
 
-      {searchResults.length > 0 && (
-        <View style={styles.resultsContainer}>
-          <FlatList
-            data={searchResults}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            renderItem={({ item }) => {
-              const info = item.volumeInfo;
-              return (
-                <Pressable
-                  style={styles.resultCard}
-                  onPress={() => autofillForm(item)}
-                >
-                  <Text style={styles.resultTitle}>
-                    {info?.title || "Untitled"}
-                  </Text>
-                  <Text style={styles.resultAuthor}>
-                    {info?.authors?.join(", ") || "Unknown author"}
-                  </Text>
-                </Pressable>
-              );
-            }}
-          />
-        </View>
-      )}
-
-      {cover.trim() ? (
-        <Image source={{ uri: cover }} style={styles.coverPreview} />
-      ) : (
-        <View style={styles.fallbackCover}>
-          <Text style={styles.fallbackTitle}>
-            {title.trim() || "Book Title"}
-          </Text>
-        </View>
-      )}
-
-      <TextInput
-        style={styles.input}
-        placeholder="Book title"
-        value={title}
-        onChangeText={setTitle}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Author"
-        value={author}
-        onChangeText={setAuthor}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Genre"
-        value={genre}
-        onChangeText={setGenre}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Year"
-        value={year}
-        onChangeText={setYear}
-        keyboardType="numeric"
-      />
-
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Description"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Cover image URL"
-        value={cover}
-        onChangeText={setCover}
-      />
-
-      <Pressable
-        style={styles.cameraButton}
-        onPress={() => setShowCamera(true)}
-      >
-        <Text style={styles.cameraButtonText}>Take cover photo</Text>
-      </Pressable>
-
-      <Pressable style={styles.saveButton} onPress={handleAddBook}>
-        <Text style={styles.saveButtonText}>Save Book</Text>
-      </Pressable>
-    </ScrollView>
+        <Pressable style={styles.saveButton} onPress={handleAddBook}>
+          <Text style={styles.saveButtonText}>Save Book</Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
