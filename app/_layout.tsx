@@ -31,6 +31,14 @@ export default function RootLayout() {
             drawerItemStyle: { display: "none" },
           }}
         />
+
+        <Drawer.Screen
+          name="chat/[id]"
+          options={{
+            drawerItemStyle: { display: "none" },
+            title: "Chat Details",
+          }}
+        />
       </Drawer>
     </BooksProvider>
   );
