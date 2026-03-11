@@ -6,10 +6,10 @@ import { useBooks } from "../../context/BooksContext";
 import type { Book } from "../../data/books";
 
 export default function Library() {
-  const { books, deleteBook } = useBooks();
+  const { libraryBooks, deleteBook } = useBooks();
   const [search, setSearch] = useState("");
 
-  const filteredBooks = books.filter((book) => {
+  const filteredBooks = libraryBooks.filter((book) => {
     const query = search.trim().toLowerCase();
 
     return (
@@ -20,7 +20,7 @@ export default function Library() {
   });
 
   const handleDeleteBook = (book: Book) => {
-    deleteBook(book.id);
+    deleteBook("library", book.id);
   };
 
   const handleLendBook = (book: Book) => {

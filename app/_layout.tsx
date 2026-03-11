@@ -1,10 +1,12 @@
 import { Drawer } from "expo-router/drawer";
+import { StatusBar } from "expo-status-bar";
 import CustomDrawerContent from "../components/CustomDrawerContent";
 import { BooksProvider } from "../context/BooksContext";
 
 export default function RootLayout() {
   return (
     <BooksProvider>
+      <StatusBar style="dark" />
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
