@@ -3,13 +3,13 @@ import { useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
 import BookList from "../../components/BookList";
 import { useBooks } from "../../context/BooksContext";
-import type { Book } from "../../data/books";
+import type { Book } from "../../data/wishlistBooks";
 
-export default function Library() {
-  const { libraryBooks, deleteBook } = useBooks();
+export default function WishlistScreen() {
+  const { wishlistBooks, deleteBook } = useBooks();
   const [search, setSearch] = useState("");
 
-  const filteredBooks = libraryBooks.filter((book) => {
+  const filteredBooks = wishlistBooks.filter((book) => {
     const query = search.trim().toLowerCase();
 
     return (
@@ -20,7 +20,7 @@ export default function Library() {
   });
 
   const handleDeleteBook = (book: Book) => {
-    deleteBook("library", book.id);
+    deleteBook("wishlist", book.id);
   };
 
   const handleLendBook = (book: Book) => {
