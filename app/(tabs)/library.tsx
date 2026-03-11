@@ -1,63 +1,29 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { useState } from "react";
-import { Alert, StyleSheet, TextInput, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import BookList from "../../components/BookList";
 import { useBooks } from "../../context/BooksContext";
-import type { Book } from "../../data/books";
 
 export default function Library() {
-  const { books, deleteBook } = useBooks();
-  const [search, setSearch] = useState("");
+  const { getMyAvailableBooks, getBorrowedBooks, getLentBooks } = useBooks();
 
-  const filteredBooks = books.filter((book) => {
-    const query = search.trim().toLowerCase();
-
-    return (
-      book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query) ||
-      book.genre.toLowerCase().includes(query)
-    );
-  });
-
-  const handleDeleteBook = (book: Book) => {
-    deleteBook(book.id);
-  };
-
-  const handleLendBook = (book: Book) => {
-    Alert.alert("Lend book", `You selected "${book.title}" to lend.`);
-  };
+  const availableBooks = getMyAvailableBooks();
+  const borrowedBooks = getBorrowedBooks();
+  const lentBooks = getLentBooks();
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchWrapper}>
-        <Ionicons name="search-outline" size={18} color="#7A7A7A" />
-        <TextInput
-          placeholder="Search"
-          placeholderTextColor="#7A7A7A"
-          style={styles.searchInput}
-          value={search}
-          onChangeText={setSearch}
-        />
-        {search.length > 0 && (
-          <Ionicons
-            name="close-circle"
-            size={18}
-            color="#7A7A7A"
-            onPress={() => setSearch("")}
-          />
-        )}
-      </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.sectionTitle}>Available</Text>
+      <BookList books={availableBooks} isLoading={false} />
 
-      <BookList
-        books={filteredBooks}
-        isLoading={false}
-        showDelete
-        showSwap
-        onDelete={handleDeleteBook}
-        onSwap={handleLendBook}
-        showAddTile
-      />
-    </View>
+      <View style={styles.sectionSpacing} />
+
+      <Text style={styles.sectionTitle}>Lent</Text>
+      <BookList books={lentBooks} isLoading={false} />
+
+      <View style={styles.sectionSpacing} />
+
+      <Text style={styles.sectionTitle}>Borrowed</Text>
+      <BookList books={borrowedBooks} isLoading={false} />
+    </ScrollView>
   );
 }
 
@@ -65,23 +31,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 12,
   },
-  searchWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E9E9E9",
-    borderRadius: 18,
-    paddingHorizontal: 10,
-    height: 38,
-    marginBottom: 20,
+  content: {
+    paddingBottom: 24,
   },
-  searchInput: {
-    flex: 1,
-    marginHorizontal: 8,
-    fontSize: 14,
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
     color: "#111",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    marginBottom: 4,
+  },
+  sectionSpacing: {
+    height: 8,
   },
 });

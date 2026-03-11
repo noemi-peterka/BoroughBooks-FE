@@ -13,82 +13,27 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-type Book = {
-  id: number;
-  title: string;
-  author: string;
-  cover: string;
-};
-
-type Message = {
-  id: string;
-  sender: "me" | "friend";
-  text: string;
-  time: string;
-  book?: Book;
-};
-
-const friends = [
-  {
-    id: "1",
-    name: "John Smith",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-  },
-  {
-    id: "2",
-    name: "Kevin Brown",
-    avatar: "https://randomuser.me/api/portraits/men/45.jpg",
-  },
-  {
-    id: "3",
-    name: "Anna Pavlova",
-    avatar: "https://randomuser.me/api/portraits/women/65.jpg",
-  },
-];
-
-const messagesByFriend: Record<string, Message[]> = {
-  "1": [
-    {
-      id: "m1",
-      sender: "me",
-      text: "Hi John, can I borrow this book from you?",
-      time: "15:10",
-      book: {
-        id: 1,
-        title: "The Hobbit",
-        author: "J.R.R. Tolkien",
-        cover: "https://covers.openlibrary.org/b/isbn/9780345272577-L.jpg",
-      },
-    },
-    {
-      id: "m2",
-      sender: "friend",
-      text: "Sure, you can borrow it.",
-      time: "15:20",
-    },
-  ],
-  "2": [
-    {
-      id: "m3",
-      sender: "friend",
-      text: "Where would be convenient to meet?",
-      time: "Yesterday",
-    },
-  ],
-  "3": [],
-};
+import { useBooks } from "../../context/BooksContext";
+import UserSwitcher from "../../components/UserSwitcher";
 
 export default function ChatDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [messageText, setMessageText] = useState("");
-  const flatListRef = useRef<FlatList<Message>>(null);
+  const flatListRef = useRef<FlatList<any>>(null);
 
-  const friend = friends.find((item) => item.id === id);
+  const {
+    currentUserId,
+    users,
+    getMessagesForFriend,
+    getLoanById,
+    getBookById,
+    approveLoan,
+    declineLoan,
+    markReturned,
+  } = useBooks();
 
-  const [messages, setMessages] = useState<Message[]>(
-    messagesByFriend[id ?? ""] || []
-  );
+  const friend = users.find((item) => item.id === id);
+  const messages = getMessagesForFriend(id ?? "");
 
   const scrollToBottom = (animated = true) => {
     requestAnimationFrame(() => {
@@ -102,21 +47,9 @@ export default function ChatDetailsScreen() {
 
   useEffect(() => {
     scrollToBottom(true);
-  }, [messages]);
+  }, [messages.length]);
 
   const handleSend = () => {
-    const trimmedMessage = messageText.trim();
-
-    if (!trimmedMessage) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      sender: "me",
-      text: trimmedMessage,
-      time: "Now",
-    };
-
-    setMessages((prev) => [...prev, newMessage]);
     setMessageText("");
   };
 
@@ -144,6 +77,8 @@ export default function ChatDetailsScreen() {
           <View style={styles.iconButton} />
         </View>
 
+        <UserSwitcher />
+
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -152,51 +87,94 @@ export default function ChatDetailsScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => scrollToBottom(false)}
-          onLayout={() => scrollToBottom(false)}
           renderItem={({ item }) => {
-            const isMe = item.sender === "me";
+            const loan = getLoanById(item.loanId);
+            const book = getBookById(item.bookId);
+
+            const isSystem = item.senderId === "system";
+            const isMe = item.senderId === currentUserId;
+            const isOwnerOfBook = loan?.ownerId === currentUserId;
+            const isBorrower = loan?.borrowerId === currentUserId;
 
             return (
               <View
                 style={[
                   styles.messageWrapper,
-                  isMe ? styles.messageWrapperMe : styles.messageWrapperFriend,
+                  isSystem
+                    ? styles.messageWrapperSystem
+                    : isMe
+                    ? styles.messageWrapperMe
+                    : styles.messageWrapperFriend,
                 ]}
               >
                 <View
                   style={[
                     styles.messageBubble,
-                    isMe ? styles.myMessage : styles.friendMessage,
+                    isSystem
+                      ? styles.systemMessage
+                      : isMe
+                      ? styles.myMessage
+                      : styles.friendMessage,
                   ]}
                 >
                   <Text
-                    style={[styles.messageText, isMe && styles.myMessageText]}
+                    style={[
+                      styles.messageText,
+                      isMe && !isSystem && styles.myMessageText,
+                    ]}
                   >
                     {item.text}
                   </Text>
 
-                  {item.book && (
+                  {book && (
                     <View style={styles.bookCard}>
                       <Image
-                        source={{ uri: item.book.cover }}
+                        source={{ uri: book.cover || "" }}
                         style={styles.bookCover}
                       />
                       <View style={styles.bookInfo}>
                         <Text style={styles.bookTitle} numberOfLines={2}>
-                          {item.book.title}
+                          {book.title}
                         </Text>
                         <Text style={styles.bookAuthor} numberOfLines={1}>
-                          {item.book.author}
+                          {book.author}
                         </Text>
+
+                        {loan && (
+                          <Text style={styles.loanStatus}>
+                            Status: {loan.status}
+                          </Text>
+                        )}
                       </View>
                     </View>
                   )}
 
-                  <Text
-                    style={[styles.messageTime, isMe && styles.myMessageTime]}
-                  >
-                    {item.time}
-                  </Text>
+                  {loan?.status === "requested" && isOwnerOfBook && (
+                    <View style={styles.actionsRow}>
+                      <TouchableOpacity
+                        style={styles.approveButton}
+                        onPress={() => approveLoan(loan.id)}
+                      >
+                        <Text style={styles.actionText}>Approve</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.declineButton}
+                        onPress={() => declineLoan(loan.id)}
+                      >
+                        <Text style={styles.actionText}>Decline</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {loan?.status === "borrowed" && isBorrower && (
+                    <TouchableOpacity
+                      style={styles.returnButton}
+                      onPress={() => markReturned(loan.id)}
+                    >
+                      <Text style={styles.actionText}>Mark as returned</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             );
@@ -270,8 +248,11 @@ const styles = StyleSheet.create({
   messageWrapperFriend: {
     justifyContent: "flex-start",
   },
+  messageWrapperSystem: {
+    justifyContent: "center",
+  },
   messageBubble: {
-    maxWidth: "78%",
+    maxWidth: "82%",
     borderRadius: 18,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -282,6 +263,9 @@ const styles = StyleSheet.create({
   friendMessage: {
     backgroundColor: "#EFEFEF",
   },
+  systemMessage: {
+    backgroundColor: "#F7F7F7",
+  },
   messageText: {
     fontSize: 15,
     color: "#111",
@@ -289,15 +273,6 @@ const styles = StyleSheet.create({
   },
   myMessageText: {
     color: "#fff",
-  },
-  messageTime: {
-    marginTop: 6,
-    fontSize: 11,
-    color: "#777",
-    alignSelf: "flex-end",
-  },
-  myMessageTime: {
-    color: "#DDD",
   },
   bookCard: {
     flexDirection: "row",
@@ -326,6 +301,42 @@ const styles = StyleSheet.create({
   bookAuthor: {
     fontSize: 12,
     color: "#666",
+  },
+  loanStatus: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#3a24ff",
+  },
+  actionsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+  },
+  approveButton: {
+    backgroundColor: "#3a24ff",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  declineButton: {
+    backgroundColor: "#888",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  returnButton: {
+    backgroundColor: "#3a24ff",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 10,
+    alignSelf: "flex-start",
+  },
+  actionText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 13,
   },
   inputArea: {
     backgroundColor: "#fff",

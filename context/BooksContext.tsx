@@ -1,5 +1,19 @@
-import { createContext, ReactNode, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { books as mockBooks } from "../data/books";
+
+export type User = {
+  id: string;
+  name: string;
+  avatar: string;
+};
+
+export type BookStatus = "available" | "pending" | "lent";
 
 export type Book = {
   id: number;
@@ -7,28 +21,137 @@ export type Book = {
   author: string;
   genre: string;
   year: number;
-  cover: string;
+  cover?: string;
   description: string;
+  ownerId: string;
+  status: BookStatus;
 };
 
-type NewBook = Omit<Book, "id">;
+type NewBook = Omit<Book, "id" | "ownerId" | "status">;
+
+export type LoanStatus =
+  | "requested"
+  | "approved"
+  | "declined"
+  | "borrowed"
+  | "returned";
+
+export type Loan = {
+  id: string;
+  bookId: number;
+  ownerId: string;
+  borrowerId: string;
+  status: LoanStatus;
+  requestedAt: string;
+  approvedAt?: string;
+  returnedAt?: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  friendId: string;
+  senderId: string | "system";
+  text: string;
+  time: string;
+  bookId?: number;
+  loanId?: string;
+};
 
 type BooksContextType = {
+  users: User[];
+  currentUserId: string;
+  currentUser: User | undefined;
+  setCurrentUserId: (userId: string) => void;
+
   books: Book[];
+  loans: Loan[];
+  messages: ChatMessage[];
+
   addBook: (book: NewBook) => void;
   deleteBook: (id: number) => void;
+
+  requestBook: (params: { bookId: number; ownerId: string }) => void;
+  approveLoan: (loanId: string) => void;
+  declineLoan: (loanId: string) => void;
+  markReturned: (loanId: string) => void;
+
+  getBookById: (bookId?: number) => Book | undefined;
+  getLoanById: (loanId?: string) => Loan | undefined;
+  getMessagesForFriend: (friendId: string) => ChatMessage[];
+
+  getMyAvailableBooks: () => Book[];
+  getFriendAvailableBooks: (friendId: string) => Book[];
+  getBorrowedBooks: () => Book[];
+  getLentBooks: () => Book[];
 };
 
 const BooksContext = createContext<BooksContextType | undefined>(undefined);
 
+const users: User[] = [
+  {
+    id: "u1",
+    name: "Anna",
+    avatar: "https://randomuser.me/api/portraits/women/65.jpg",
+  },
+  {
+    id: "u2",
+    name: "John",
+    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+  },
+];
+
+const initialBooks: Book[] = [
+  ...mockBooks.map((book, index) => ({
+    ...book,
+    ownerId: "u1",
+    status: "available" as BookStatus,
+    id: book.id || index + 1,
+  })),
+  {
+    id: 1001,
+    title: "The Hobbit",
+    author: "J.R.R. Tolkien",
+    genre: "Fantasy",
+    year: 1937,
+    cover: "https://covers.openlibrary.org/b/isbn/9780345272577-L.jpg",
+    description: "Bilbo Baggins goes on an unexpected journey.",
+    ownerId: "u2",
+    status: "available",
+  },
+  {
+    id: 1002,
+    title: "1984",
+    author: "George Orwell",
+    genre: "Dystopian",
+    year: 1949,
+    cover: "https://covers.openlibrary.org/b/isbn/9780451524935-L.jpg",
+    description: "A novel about surveillance and totalitarianism.",
+    ownerId: "u2",
+    status: "available",
+  },
+];
+
 export function BooksProvider({ children }: { children: ReactNode }) {
-  const [books, setBooks] = useState<Book[]>(mockBooks);
+  const [currentUserId, setCurrentUserId] = useState("u1");
+  const [books, setBooks] = useState<Book[]>(initialBooks);
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  const currentUser = users.find((user) => user.id === currentUserId);
+
+  const getNow = () =>
+    new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   const addBook = (book: NewBook) => {
     setBooks((currentBooks) => [
       {
         id: Date.now(),
         ...book,
+        ownerId: currentUserId,
+        status: "available",
       },
       ...currentBooks,
     ]);
@@ -38,7 +161,237 @@ export function BooksProvider({ children }: { children: ReactNode }) {
     setBooks((currentBooks) => currentBooks.filter((book) => book.id !== id));
   };
 
-  const value = useMemo(() => ({ books, addBook, deleteBook }), [books]);
+  const requestBook = ({
+    bookId,
+    ownerId,
+  }: {
+    bookId: number;
+    ownerId: string;
+  }) => {
+    const book = books.find((b) => b.id === bookId);
+    if (!book) return;
+
+    const existingActiveLoan = loans.find(
+      (loan) =>
+        loan.bookId === bookId &&
+        ["requested", "approved", "borrowed"].includes(loan.status)
+    );
+
+    if (existingActiveLoan) return;
+
+    const now = getNow();
+    const loanId = `loan-${Date.now()}`;
+
+    const newLoan: Loan = {
+      id: loanId,
+      bookId,
+      ownerId,
+      borrowerId: currentUserId,
+      status: "requested",
+      requestedAt: now,
+    };
+
+    setLoans((currentLoans) => [...currentLoans, newLoan]);
+
+    setBooks((currentBooks) =>
+      currentBooks.map((b) =>
+        b.id === bookId ? { ...b, status: "pending" } : b
+      )
+    );
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: `msg-${Date.now()}`,
+        friendId: ownerId,
+        senderId: currentUserId,
+        text: "Hi, can I borrow this book from you?",
+        time: now,
+        bookId,
+        loanId,
+      },
+    ]);
+  };
+
+  const approveLoan = (loanId: string) => {
+    const loan = loans.find((l) => l.id === loanId);
+    if (!loan) return;
+
+    const now = getNow();
+
+    setLoans((currentLoans) =>
+      currentLoans.map((l) =>
+        l.id === loanId
+          ? {
+              ...l,
+              status: "borrowed",
+              approvedAt: now,
+            }
+          : l
+      )
+    );
+
+    setBooks((currentBooks) =>
+      currentBooks.map((b) =>
+        b.id === loan.bookId ? { ...b, status: "lent" } : b
+      )
+    );
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: `msg-${Date.now()}`,
+        friendId: loan.borrowerId,
+        senderId: "system",
+        text: "Borrow request approved.",
+        time: now,
+        bookId: loan.bookId,
+        loanId,
+      },
+    ]);
+  };
+
+  const declineLoan = (loanId: string) => {
+    const loan = loans.find((l) => l.id === loanId);
+    if (!loan) return;
+
+    const now = getNow();
+
+    setLoans((currentLoans) =>
+      currentLoans.map((l) =>
+        l.id === loanId
+          ? {
+              ...l,
+              status: "declined",
+            }
+          : l
+      )
+    );
+
+    setBooks((currentBooks) =>
+      currentBooks.map((b) =>
+        b.id === loan.bookId ? { ...b, status: "available" } : b
+      )
+    );
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: `msg-${Date.now()}`,
+        friendId: loan.borrowerId,
+        senderId: "system",
+        text: "Borrow request declined.",
+        time: now,
+        bookId: loan.bookId,
+        loanId,
+      },
+    ]);
+  };
+
+  const markReturned = (loanId: string) => {
+    const loan = loans.find((l) => l.id === loanId);
+    if (!loan) return;
+
+    const now = getNow();
+
+    setLoans((currentLoans) =>
+      currentLoans.map((l) =>
+        l.id === loanId
+          ? {
+              ...l,
+              status: "returned",
+              returnedAt: now,
+            }
+          : l
+      )
+    );
+
+    setBooks((currentBooks) =>
+      currentBooks.map((b) =>
+        b.id === loan.bookId ? { ...b, status: "available" } : b
+      )
+    );
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        id: `msg-${Date.now()}`,
+        friendId:
+          currentUserId === loan.ownerId ? loan.borrowerId : loan.ownerId,
+        senderId: "system",
+        text: "Book marked as returned.",
+        time: now,
+        bookId: loan.bookId,
+        loanId,
+      },
+    ]);
+  };
+
+  const getBookById = (bookId?: number) =>
+    books.find((book) => book.id === bookId);
+
+  const getLoanById = (loanId?: string) =>
+    loans.find((loan) => loan.id === loanId);
+
+  const getMessagesForFriend = (friendId: string) =>
+    messages.filter((message) => message.friendId === friendId);
+
+  const getMyAvailableBooks = () =>
+    books.filter(
+      (book) => book.ownerId === currentUserId && book.status === "available"
+    );
+
+  const getFriendAvailableBooks = (friendId: string) =>
+    books.filter(
+      (book) => book.ownerId === friendId && book.status === "available"
+    );
+
+  const getBorrowedBooks = () => {
+    const borrowedBookIds = loans
+      .filter(
+        (loan) =>
+          loan.borrowerId === currentUserId && loan.status === "borrowed"
+      )
+      .map((loan) => loan.bookId);
+
+    return books.filter((book) => borrowedBookIds.includes(book.id));
+  };
+
+  const getLentBooks = () => {
+    const lentBookIds = loans
+      .filter(
+        (loan) => loan.ownerId === currentUserId && loan.status === "borrowed"
+      )
+      .map((loan) => loan.bookId);
+
+    return books.filter((book) => lentBookIds.includes(book.id));
+  };
+
+  const value = useMemo(
+    () => ({
+      users,
+      currentUserId,
+      currentUser,
+      setCurrentUserId,
+      books,
+      loans,
+      messages,
+      addBook,
+      deleteBook,
+      requestBook,
+      approveLoan,
+      declineLoan,
+      markReturned,
+      getBookById,
+      getLoanById,
+      getMessagesForFriend,
+      getMyAvailableBooks,
+      getFriendAvailableBooks,
+      getBorrowedBooks,
+      getLentBooks,
+    }),
+    [currentUserId, currentUser, books, loans, messages]
+  );
 
   return (
     <BooksContext.Provider value={value}>{children}</BooksContext.Provider>
