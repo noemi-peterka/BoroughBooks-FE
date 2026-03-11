@@ -25,7 +25,6 @@ export default function RootLayout() {
           }}
         />
 
-        {/* Hide not-found route from drawer */}
         <Drawer.Screen
           name="+not-found"
           options={{

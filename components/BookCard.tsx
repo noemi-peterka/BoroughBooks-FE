@@ -17,7 +17,7 @@ export type Book = {
   genre: string;
   year: number;
   description: string;
-  cover: string;
+  cover?: string;
 };
 
 type BookCardProps = {
@@ -41,6 +41,8 @@ export default function BookCard({
 }: BookCardProps) {
   const [modalVisible, setModalVisible] = useState(false);
 
+  const hasCover = !!book.cover?.trim();
+
   const handleRequest = () => {
     onRequest?.(book);
     setModalVisible(false);
@@ -59,7 +61,15 @@ export default function BookCard({
   return (
     <>
       <Pressable style={styles.card} onPress={() => setModalVisible(true)}>
-        <Image source={{ uri: book.cover }} style={styles.image} />
+        {hasCover ? (
+          <Image source={{ uri: book.cover }} style={styles.image} />
+        ) : (
+          <View style={[styles.image, styles.fallbackCover]}>
+            <Text style={styles.fallbackTitle} numberOfLines={4}>
+              {book.title}
+            </Text>
+          </View>
+        )}
       </Pressable>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -76,7 +86,15 @@ export default function BookCard({
               <Text style={styles.title}>{book.title}</Text>
               <Text style={styles.author}>{book.author}</Text>
 
-              <Image source={{ uri: book.cover }} style={styles.modalImage} />
+              {hasCover ? (
+                <Image source={{ uri: book.cover }} style={styles.modalImage} />
+              ) : (
+                <View style={[styles.modalImage, styles.fallbackCover]}>
+                  <Text style={styles.modalFallbackTitle} numberOfLines={5}>
+                    {book.title}
+                  </Text>
+                </View>
+              )}
 
               <View style={styles.iconRow}>
                 {showSwap && (
@@ -131,6 +149,31 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 250,
     borderRadius: 8,
+  },
+
+  fallbackCover: {
+    backgroundColor: "#4a4a4a",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+  },
+
+  fallbackTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 24,
+  },
+
+  modalFallbackTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 30,
+    paddingHorizontal: 12,
   },
 
   modalBackground: {

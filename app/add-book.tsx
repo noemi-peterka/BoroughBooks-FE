@@ -23,6 +23,16 @@ export default function AddBookScreen() {
   const [cover, setCover] = useState("");
   const [description, setDescription] = useState("");
 
+  const resetForm = () => {
+    setTitle("");
+    setAuthor("");
+    setGenre("");
+    setYear("");
+    setCover("");
+    setDescription("");
+    setShowCamera(false);
+  };
+
   if (showCamera) {
     return (
       <CoverCamera
@@ -49,20 +59,28 @@ export default function AddBookScreen() {
       author: author.trim(),
       genre: genre.trim() || "Unknown",
       year: Number(year) || new Date().getFullYear(),
-      cover:
-        cover.trim() || "https://via.placeholder.com/150x220.png?text=No+Cover",
+      cover: cover.trim(),
       description: description.trim() || "No description provided.",
     });
 
+    resetForm();
     router.back();
   };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.heading}>Add Book</Text>
 
-      {cover !== "" && (
+      {cover.trim() ? (
         <Image source={{ uri: cover }} style={styles.coverPreview} />
+      ) : (
+        <Pressable
+          style={styles.fallbackCover}
+          onPress={() => setShowCamera(true)}
+        >
+          <Text style={styles.fallbackTitle}>
+            {title.trim() || "Book Title"}
+          </Text>
+        </Pressable>
       )}
 
       <TextInput
@@ -174,5 +192,22 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
+  },
+  fallbackCover: {
+    width: 140,
+    height: 200,
+    borderRadius: 10,
+    alignSelf: "center",
+    marginBottom: 16,
+    backgroundColor: "#4a4a4a",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 12,
+  },
+  fallbackTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
   },
 });
