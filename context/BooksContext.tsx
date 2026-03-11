@@ -16,6 +16,7 @@ type NewBook = Omit<Book, "id">;
 type BooksContextType = {
   books: Book[];
   addBook: (book: NewBook) => void;
+  deleteBook: (id: number) => void;
 };
 
 const BooksContext = createContext<BooksContextType | undefined>(undefined);
@@ -33,7 +34,11 @@ export function BooksProvider({ children }: { children: ReactNode }) {
     ]);
   };
 
-  const value = useMemo(() => ({ books, addBook }), [books]);
+  const deleteBook = (id: number) => {
+    setBooks((currentBooks) => currentBooks.filter((book) => book.id !== id));
+  };
+
+  const value = useMemo(() => ({ books, addBook, deleteBook }), [books]);
 
   return (
     <BooksContext.Provider value={value}>{children}</BooksContext.Provider>

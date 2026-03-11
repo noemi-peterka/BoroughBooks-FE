@@ -14,7 +14,6 @@ import BookCard from "./BookCard";
 
 type LibraryItem = { type: "add"; id: string } | ({ type: "book" } & Book);
 
-
 type BookListProps = {
   books: Book[];
   isLoading: boolean;
@@ -22,12 +21,12 @@ type BookListProps = {
   showDelete?: boolean;
   showSwap?: boolean;
   showRequest?: boolean;
+
   onRequest?: (book: Book) => void;
   onDelete?: (book: Book) => void;
   onSwap?: (book: Book) => void;
 
   showAddTile?: boolean;
-
 };
 
 export default function BookList({
@@ -43,7 +42,6 @@ export default function BookList({
 }: BookListProps) {
   const router = useRouter();
 
-
   if (isLoading) {
     return (
       <View style={styles.stateContainer}>
@@ -53,21 +51,20 @@ export default function BookList({
     );
   }
 
-
-  if (books.length === 0) {
+  if (books.length === 0 && !showAddTile) {
     return (
       <View style={styles.stateContainer}>
         <Text style={styles.stateText}>No books found.</Text>
       </View>
     );
   }
+
   const data: LibraryItem[] = showAddTile
     ? [
         { type: "add", id: "add-tile" },
         ...books.map((book) => ({ ...book, type: "book" as const })),
       ]
     : books.map((book) => ({ ...book, type: "book" as const }));
-
 
   return (
     <FlatList
@@ -76,20 +73,7 @@ export default function BookList({
       numColumns={2}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.container}
-
       showsVerticalScrollIndicator={false}
-      renderItem={({ item }) => (
-        <BookCard
-          book={item}
-          showDelete={showDelete}
-          showSwap={showSwap}
-          showRequest={showRequest}
-          onRequest={onRequest}
-          onDelete={onDelete}
-          onSwap={onSwap}
-        />
-      )}
-
       renderItem={({ item }) => {
         if (item.type === "add") {
           return (
@@ -104,9 +88,18 @@ export default function BookList({
           );
         }
 
-        return <BookCard book={item} />;
+        return (
+          <BookCard
+            book={item}
+            showDelete={showDelete}
+            showSwap={showSwap}
+            showRequest={showRequest}
+            onRequest={onRequest}
+            onDelete={onDelete}
+            onSwap={onSwap}
+          />
+        );
       }}
-
     />
   );
 }
