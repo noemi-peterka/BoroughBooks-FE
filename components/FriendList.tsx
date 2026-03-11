@@ -36,5 +36,6 @@ export const FriendList = ({ friends, onFriendPress }: FriendListProps) => {
 const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 24,
+    paddingHorizontal: 16
   },
 });
