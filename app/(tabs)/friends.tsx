@@ -82,12 +82,6 @@ export default function FriendsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F3F3F3",
-    paddingHorizontal: 24,
-    paddingTop: 24,
-  },
-  container: {
-    flex: 1,
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 18,
     paddingTop: 18,
