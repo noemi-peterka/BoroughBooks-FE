@@ -1,80 +1,89 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { FriendList } from "../../components/FriendList";
-
-const friends = [
-  {
-    id: "1",
-    name: "John Smith",
-    subtitle: "1 book lent",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-  },
-  {
-    id: "2",
-    name: "Kevin Brown",
-    subtitle: "3 books borrowed",
-    avatar: "https://randomuser.me/api/portraits/men/45.jpg",
-  },
-  {
-    id: "3",
-    name: "Anna Pavlova",
-    avatar: "https://randomuser.me/api/portraits/women/65.jpg",
-  },
-  {
-    id: "4",
-    name: "Maria Ivanova",
-    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-  },
-  {
-    id: "5",
-    name: "Alex Green",
-    avatar: "https://randomuser.me/api/portraits/men/12.jpg",
-  },
-];
+import UserSwitcher from "../../components/UserSwitcher";
+import { useBooks } from "../../context/BooksContext";
 
 export default function FriendsScreen() {
   const [search, setSearch] = useState("");
+  const { users, currentUserId, books, loans } = useBooks();
+
+  const friends = useMemo(() => {
+    return users
+      .filter((user) => user.id !== currentUserId)
+      .map((user) => {
+        const lentCount = loans.filter(
+          (loan) => loan.ownerId === user.id && loan.status === "borrowed"
+        ).length;
+
+        const borrowedCount = loans.filter(
+          (loan) => loan.borrowerId === user.id && loan.status === "borrowed"
+        ).length;
+
+        let subtitle = "";
+
+        if (lentCount > 0) {
+          subtitle = `${lentCount} book${lentCount > 1 ? "s" : ""} lent`;
+        } else if (borrowedCount > 0) {
+          subtitle = `${borrowedCount} book${borrowedCount > 1 ? "s" : ""} borrowed`;
+        } else {
+          const booksCount = books.filter((book) => book.ownerId === user.id).length;
+          subtitle = `${booksCount} book${booksCount !== 1 ? "s" : ""} in library`;
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar,
+          subtitle,
+        };
+      });
+  }, [users, currentUserId, books, loans]);
 
   const filteredFriends = friends.filter((friend) =>
     friend.name.toLowerCase().includes(search.trim().toLowerCase())
   );
 
   const handleFriendPress = (id: string) => {
-    router.push(`/friend/${id}`);
+    router.push({
+      pathname: "/friend/[id]",
+      params: { id },
+    });
   };
 
   return (
     <View style={styles.screen}>
-      <View style={styles.container}>
-        <View style={styles.searchWrapper}>
-          <Ionicons name="search-outline" size={18} color="#7A7A7A" />
-          <TextInput
-            placeholder="Search"
-            placeholderTextColor="#7A7A7A"
-            style={styles.searchInput}
-            value={search}
-            onChangeText={setSearch}
-          />
-          {search.length > 0 && (
-            <Ionicons
-              name="close-circle"
-              size={18}
-              color="#7A7A7A"
-              onPress={() => setSearch("")}
-            />
-          )}
-        </View>
+      <UserSwitcher />
 
-        <FriendList friends={filteredFriends} onFriendPress={handleFriendPress} />
+      <View style={styles.searchWrapper}>
+        <Ionicons name="search-outline" size={18} color="#7A7A7A" />
+        <TextInput
+          placeholder="Search"
+          placeholderTextColor="#7A7A7A"
+          style={styles.searchInput}
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 && (
+          <Ionicons
+            name="close-circle"
+            size={18}
+            color="#7A7A7A"
+            onPress={() => setSearch("")}
+          />
+        )}
       </View>
+
+      <FriendList
+        friends={filteredFriends}
+        onFriendPress={handleFriendPress}
+      />
     </View>
   );
 }
@@ -83,29 +92,19 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 18,
-    paddingTop: 18,
+    paddingTop: 8,
     paddingBottom: 12,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#000",
   },
   searchWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#E9E9E9",
     borderRadius: 18,
+    marginHorizontal: 16,
     paddingHorizontal: 10,
     height: 38,
-    marginBottom: 28,
+    marginTop: 8,
+    marginBottom: 20,
   },
   searchInput: {
     flex: 1,

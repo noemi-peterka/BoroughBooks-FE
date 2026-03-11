@@ -1,17 +1,32 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
-import { Alert, StyleSheet, TextInput, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import BookList from "../../components/BookList";
-import { useBooks } from "../../context/BooksContext";
-import type { Book } from "../../data/books";
+import { useBooks, type Book } from "../../context/BooksContext";
 
 export default function Library() {
-  const { libraryBooks, deleteBook } = useBooks();
+  const { libraryBooks, borrowedBooks, lentBooks, deleteBook } = useBooks();
   const [search, setSearch] = useState("");
 
-  const filteredBooks = libraryBooks.filter((book) => {
-    const query = search.trim().toLowerCase();
+  const query = search.trim().toLowerCase();
 
+  const availableBooks = libraryBooks.filter((book) => {
+    return (
+      book.title.toLowerCase().includes(query) ||
+      book.author.toLowerCase().includes(query) ||
+      book.genre.toLowerCase().includes(query)
+    );
+  });
+
+  const filteredLentBooks = lentBooks.filter((book) => {
+    return (
+      book.title.toLowerCase().includes(query) ||
+      book.author.toLowerCase().includes(query) ||
+      book.genre.toLowerCase().includes(query)
+    );
+  });
+
+  const filteredBorrowedBooks = borrowedBooks.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
       book.author.toLowerCase().includes(query) ||
@@ -23,12 +38,8 @@ export default function Library() {
     deleteBook("library", book.id);
   };
 
-  const handleLendBook = (book: Book) => {
-    Alert.alert("Lend book", `You selected "${book.title}" to lend.`);
-  };
-
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={18} color="#7A7A7A" />
         <TextInput
@@ -48,16 +59,24 @@ export default function Library() {
         )}
       </View>
 
+      <Text style={styles.sectionTitle}>Available</Text>
       <BookList
-        books={filteredBooks}
+        books={availableBooks}
         isLoading={false}
         showDelete
-        showSwap
         onDelete={handleDeleteBook}
-        onSwap={handleLendBook}
         showAddTile
+        addToCollection="library"
       />
-    </View>
+
+      <Text style={styles.sectionTitle}>Lent</Text>
+      <BookList books={filteredLentBooks} isLoading={false} />
+
+      <View style={styles.sectionSpacing} />
+
+      <Text style={styles.sectionTitle}>Borrowed</Text>
+      <BookList books={filteredBorrowedBooks} isLoading={false} />
+    </ScrollView>
   );
 }
 
@@ -65,9 +84,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 12,
+  },
+  content: {
+    paddingBottom: 24,
   },
   searchWrapper: {
     flexDirection: "row",
@@ -76,12 +95,25 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingHorizontal: 10,
     height: 38,
-    marginBottom: 20,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
     marginHorizontal: 8,
     fontSize: 14,
     color: "#111",
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#111",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    marginBottom: 4,
+  },
+  sectionSpacing: {
+    height: 8,
   },
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -10,82 +10,21 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import BookList from "../../components/BookList";
-import type { Book } from "../../components/BookCard";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const friends = [
-  { id: "1", name: "John Smith" },
-  { id: "2", name: "Kevin Brown" },
-  { id: "3", name: "Anna Pavlova" },
-];
-
-const booksByFriend: Record<string, (Book & { available: boolean })[]> = {
-  "1": [
-    {
-      id: 1,
-      title: "The Hobbit",
-      author: "J.R.R. Tolkien",
-      genre: "Fantasy",
-      year: 1937,
-      description: "Bilbo Baggins goes on an unexpected journey.",
-      cover: "https://covers.openlibrary.org/b/isbn/9780345272577-L.jpg",
-      available: true,
-    },
-    {
-      id: 2,
-      title: "1984",
-      author: "George Orwell",
-      genre: "Dystopian",
-      year: 1949,
-      description: "A novel about surveillance, control, and totalitarianism.",
-      cover: "https://covers.openlibrary.org/b/isbn/9780451524935-L.jpg",
-      available: true,
-    },
-    {
-      id: 3,
-      title: "Cracking the Coding Interview",
-      author: "Gayle Laakmann McDowell",
-      genre: "Programming",
-      year: 2015,
-      description: "Programming interview questions and solutions.",
-      cover: "https://covers.openlibrary.org/b/isbn/9780984782857-L.jpg",
-      available: true,
-    },
-    {
-      id: 4,
-      title: "God's Troubadour",
-      author: "Sophie Jewett",
-      genre: "Biography",
-      year: 1910,
-      description: "The story of Saint Francis of Assisi.",
-      cover: "https://covers.openlibrary.org/b/isbn/9780690332605-L.jpg",
-      available: true,
-    },
-  ],
-  "2": [],
-  "3": [],
-};
+import BookList from "../../components/BookList";
+import UserSwitcher from "../../components/UserSwitcher";
+import { useBooks } from "../../context/BooksContext";
+import type { Book } from "../../context/BooksContext";
 
 export default function FriendLibraryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [search, setSearch] = useState("");
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
 
-  const friend = friends.find((item) => item.id === id);
+  const { users, getFriendAvailableBooks, requestBook } = useBooks();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const friendBooks = booksByFriend[id ?? ""] || [];
-      const availableBooks = friendBooks.filter((book) => book.available);
-      setBooks(availableBooks);
-      setIsLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [id]);
+  const friend = users.find((item) => item.id === id);
+  const books = getFriendAvailableBooks(id ?? "");
 
   const filteredBooks = useMemo(() => {
     return books.filter((book) =>
@@ -93,16 +32,23 @@ export default function FriendLibraryScreen() {
     );
   }, [books, search]);
 
-  const handleRequestBook = () => {
-    setMenuVisible(false);
+  const handleRequestBook = (book: Book) => {
+    if (!id) return;
+
+    requestBook({
+      bookId: book.id,
+      ownerId: id,
+    });
+
     router.push({
       pathname: "/chat/[id]",
-      params: { id: id ?? "" },
+      params: { id },
     });
   };
 
   const handleOpenMessage = () => {
     setMenuVisible(false);
+
     router.push({
       pathname: "/chat/[id]",
       params: { id: id ?? "" },
@@ -130,6 +76,8 @@ export default function FriendLibraryScreen() {
         </TouchableOpacity>
       </View>
 
+      <UserSwitcher />
+
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={18} color="#7A7A7A" />
 
@@ -154,7 +102,7 @@ export default function FriendLibraryScreen() {
       <View style={styles.listContainer}>
         <BookList
           books={filteredBooks}
-          isLoading={isLoading}
+          isLoading={false}
           showRequest={true}
           onRequest={handleRequestBook}
         />
@@ -188,7 +136,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   iconButton: {
     width: 36,
@@ -211,6 +159,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     height: 38,
     marginBottom: 8,
+    marginTop: 8,
   },
   searchInput: {
     flex: 1,
