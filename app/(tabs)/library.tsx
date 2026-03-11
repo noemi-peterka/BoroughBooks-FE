@@ -32,7 +32,7 @@ export default function Library() {
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={18} color="#7A7A7A" />
         <TextInput
-          placeholder="Search by title"
+          placeholder="Search"
           placeholderTextColor="#7A7A7A"
           style={styles.searchInput}
           value={search}
