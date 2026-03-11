@@ -7,13 +7,13 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#3a24ffff",
+        headerLeft: () => <DrawerToggleButton />,
       }}
     >
       <Tabs.Screen
         name="library"
         options={{
-          title: "Library",
-          headerLeft: () => <DrawerToggleButton />,
+          title: "My Library",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "library-sharp" : "library-outline"}
@@ -23,11 +23,11 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
         name="friends"
         options={{
           title: "Friends",
-          headerLeft: () => <DrawerToggleButton />,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "people-sharp" : "people-outline"}
@@ -37,11 +37,11 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
         name="chat"
         options={{
           title: "Chat",
-          headerLeft: () => <DrawerToggleButton />,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "chatbubbles-sharp" : "chatbubbles-outline"}
@@ -49,6 +49,38 @@ export default function TabLayout() {
               size={24}
             />
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="wishlist"
+        options={{
+          title: "Wishlist",
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="borrowed"
+        options={{
+          title: "Borrowed",
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="lent"
+        options={{
+          title: "Lent",
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          href: null,
         }}
       />
     </Tabs>
