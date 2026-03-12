@@ -1,11 +1,15 @@
+import { BookStatus } from "@/context/BooksContext";
+
 export type Book = {
   id: number;
   title: string;
   author: string;
   genre: string;
   year: number;
-  cover: string;
+  cover?: string;
   description: string;
+  ownerId?: string;
+  status?: BookStatus;
 };
 
 export const books: Book[] = [

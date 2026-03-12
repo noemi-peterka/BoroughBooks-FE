@@ -1,6 +1,6 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import BookList from "../../components/BookList";
 import { useBooks, type Book } from "../../context/BooksContext";
 
@@ -13,24 +13,21 @@ export default function Library() {
   const availableBooks = libraryBooks.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query) ||
-      book.genre.toLowerCase().includes(query)
+      book.author.toLowerCase().includes(query)
     );
   });
 
   const filteredLentBooks = lentBooks.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query) ||
-      book.genre.toLowerCase().includes(query)
+      book.author.toLowerCase().includes(query)
     );
   });
 
   const filteredBorrowedBooks = borrowedBooks.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query) ||
-      book.genre.toLowerCase().includes(query)
+      book.author.toLowerCase().includes(query)
     );
   });
 
@@ -59,7 +56,7 @@ export default function Library() {
         )}
       </View>
 
-      <Text style={styles.sectionTitle}>Available</Text>
+      <Text style={styles.sectionTitle}>My Books</Text>
       <BookList
         books={availableBooks}
         isLoading={false}
@@ -67,15 +64,20 @@ export default function Library() {
         onDelete={handleDeleteBook}
         showAddTile
         addToCollection="library"
+        layout="carousel"
       />
 
       <Text style={styles.sectionTitle}>Lent</Text>
-      <BookList books={filteredLentBooks} isLoading={false} />
+      <BookList books={filteredLentBooks} isLoading={false} layout="carousel" />
 
       <View style={styles.sectionSpacing} />
 
       <Text style={styles.sectionTitle}>Borrowed</Text>
-      <BookList books={filteredBorrowedBooks} isLoading={false} />
+      <BookList
+        books={filteredBorrowedBooks}
+        isLoading={false}
+        layout="carousel"
+      />
     </ScrollView>
   );
 }

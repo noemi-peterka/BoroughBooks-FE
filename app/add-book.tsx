@@ -10,13 +10,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CoverCamera from "../components/CoverCamera";
 import ISBNScanner from "../components/ISBNScanner";
-import { CollectionType, useBooks } from "../context/BooksContext";
-
+import { useBooks, type CollectionType } from "../context/BooksContext";
 type GoogleBookItem = {
   id: string;
   volumeInfo?: {
@@ -181,10 +181,6 @@ export default function AddBookScreen() {
     });
 
     resetForm();
-    router.push({
-      pathname: "/add-book",
-      params: { collection: "wishlist" },
-    });
     router.back();
   };
 
@@ -221,7 +217,16 @@ export default function AddBookScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.heading}>{screenTitle}</Text>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.iconButton}
+          >
+            <Ionicons name="chevron-back" size={32} color="#111" />
+          </TouchableOpacity>
+
+          <Text style={styles.heading}>{screenTitle}</Text>
+        </View>
 
         <View style={styles.searchWrapper}>
           <Ionicons name="search-outline" size={18} color="#7A7A7A" />
@@ -361,7 +366,6 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 26,
     fontWeight: "700",
-    marginBottom: 20,
   },
   input: {
     backgroundColor: "#fff",
@@ -466,5 +470,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     fontSize: 14,
     color: "#111",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    marginBottom: 16,
+  },
+  iconButton: {
+    width: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
   },
 });

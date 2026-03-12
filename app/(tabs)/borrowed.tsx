@@ -2,8 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
 import BookList from "../../components/BookList";
-import { useBooks } from "../../context/BooksContext";
-import type { Book } from "../../data/borrowedBooks";
+import { useBooks, type Book } from "../../context/BooksContext";
 
 export default function BorrowedScreen() {
   const { borrowedBooks, deleteBook } = useBooks();
@@ -13,9 +12,9 @@ export default function BorrowedScreen() {
     const query = search.trim().toLowerCase();
 
     return (
-      book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query) ||
-      book.genre.toLowerCase().includes(query)
+      book.cover &&
+      (book.title.toLowerCase().includes(query) ||
+        book.author.toLowerCase().includes(query))
     );
   });
 
