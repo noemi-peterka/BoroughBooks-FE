@@ -2,8 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
 import BookList from "../../components/BookList";
-import { useBooks } from "../../context/BooksContext";
-import type { Book } from "../../data/wishlistBooks";
+import { useBooks, type Book } from "../../context/BooksContext";
 
 export default function WishlistScreen() {
   const { wishlistBooks, deleteBook } = useBooks();
@@ -14,8 +13,7 @@ export default function WishlistScreen() {
 
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query) ||
-      book.genre.toLowerCase().includes(query)
+      book.author.toLowerCase().includes(query)
     );
   });
 

@@ -10,15 +10,7 @@ import {
   View,
 } from "react-native";
 
-export type Book = {
-  id: number;
-  title: string;
-  author: string;
-  genre: string;
-  year: number;
-  description: string;
-  cover?: string;
-};
+import type { Book } from "../context/BooksContext";
 
 type BookCardProps = {
   book: Book;
@@ -139,8 +131,6 @@ export default function BookCard({
 
 const styles = StyleSheet.create({
   card: {
-    width: "48%",
-    marginVertical: 10,
     borderRadius: 10,
     overflow: "hidden",
   },

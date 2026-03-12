@@ -1,13 +1,4 @@
-export type Book = {
-  id: number;
-  title: string;
-  author: string;
-  genre: string;
-  year: number;
-  cover: string;
-  description: string;
-};
-
+import type { Book } from "../context/BooksContext";
 export const lentBooks: Book[] = [
   {
     id: 4,
