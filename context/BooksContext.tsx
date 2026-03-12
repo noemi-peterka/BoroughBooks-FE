@@ -449,13 +449,10 @@ export function BooksProvider({ children }: { children: ReactNode }) {
     ]);
   };
 
-  const getBookById = (bookId?: number) =>
-    [
-      ...books,
-      ...wishlistBooks,
-      ...manualBorrowedBooks,
-      ...manualLentBooks,
-    ].find((book) => book.id === bookId);
+ const getBookById = (bookId?: number) =>
+  [...books, ...wishlistBooks, ...borrowedBooks, ...lentBooks].find(
+    (book) => book.id === bookId,
+  );
 
   const getLoanById = (loanId?: string) =>
     loans.find((loan) => loan.id === loanId);

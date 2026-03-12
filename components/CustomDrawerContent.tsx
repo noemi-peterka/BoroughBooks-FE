@@ -5,7 +5,7 @@ export default function CustomDrawerContent(props: any) {
   return (
     <DrawerContentScrollView {...props}>
       <DrawerItem
-        label="My library"
+        label="Library"
         onPress={() => router.push("/(tabs)/library")}
       />
 

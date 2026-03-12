@@ -131,15 +131,16 @@ export default function BookCard({
 
 const styles = StyleSheet.create({
   card: {
+    width: "100%",
     borderRadius: 10,
     overflow: "hidden",
   },
 
   image: {
     width: "100%",
-    height: 250,
+    height: 220,
     borderRadius: 8,
-  },
+},
 
   fallbackCover: {
     backgroundColor: "#4a4a4a",

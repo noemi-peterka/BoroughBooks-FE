@@ -72,11 +72,11 @@ export default function BookList({
     if (item.type === "add") {
       return (
         <Pressable
-          style={layout === "carousel" ? styles.carouselCard : styles.gridCard}
+          style={layout === "carousel" ? styles.carouselAddCard : styles.gridCard}
           onPress={() => router.push("/add-book")}
         >
           <View style={styles.addTile}>
-            <Ionicons name="add" size={40} color="#aaa" />
+            <Ionicons name="add" size={26} color="#fff" />
           </View>
         </Pressable>
       );
@@ -146,17 +146,20 @@ const styles = StyleSheet.create({
   },
 
   carouselCard: {
-    width: 180,
+    width: 160,
+    height: 220,
     marginRight: 12,
   },
 
   addTile: {
-    width: "100%",
-    height: 250,
-    backgroundColor: "#e5e5e5",
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
+  width: 56,
+  height: 56,
+  backgroundColor: "black",
+  borderRadius: 28,
+  justifyContent: "center",
+  alignItems: "center",
+  alignSelf: "center",
+  marginTop: 80,
   },
 
   stateContainer: {
@@ -170,4 +173,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
   },
+
+  carouselAddCard: {
+  width: 70,
+  marginRight: 20,
+  justifyContent: "flex-start",
+  color: "white",
+},
 });

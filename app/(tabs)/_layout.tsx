@@ -13,7 +13,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="library"
         options={{
-          title: "Books",
+          title: "Library",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "library-sharp" : "library-outline"}

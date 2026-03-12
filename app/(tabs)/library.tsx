@@ -1,11 +1,20 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import BookList from "../../components/BookList";
 import { useBooks, type Book } from "../../context/BooksContext";
 
 export default function Library() {
-  const { libraryBooks, borrowedBooks, lentBooks, deleteBook } = useBooks();
+  const { libraryBooks, borrowedBooks, lentBooks, wishlistBooks, deleteBook } =
+    useBooks();
   const [search, setSearch] = useState("");
 
   const query = search.trim().toLowerCase();
@@ -25,6 +34,13 @@ export default function Library() {
   });
 
   const filteredBorrowedBooks = borrowedBooks.filter((book) => {
+    return (
+      book.title.toLowerCase().includes(query) ||
+      book.author.toLowerCase().includes(query)
+    );
+  });
+
+  const filteredWishlistBooks = wishlistBooks.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
       book.author.toLowerCase().includes(query)
@@ -56,23 +72,48 @@ export default function Library() {
         )}
       </View>
 
-      <Text style={styles.sectionTitle}>My Books</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>My Books</Text>
+        <Pressable onPress={() => router.push("/collection/library")}>
+          <Text style={styles.seeAll}>See all</Text>
+        </Pressable>
+      </View>
       <BookList
         books={availableBooks}
         isLoading={false}
         showDelete
         onDelete={handleDeleteBook}
-        showAddTile
-        addToCollection="library"
         layout="carousel"
       />
 
-      <Text style={styles.sectionTitle}>Lent</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Wishlist</Text>
+        <Pressable onPress={() => router.push("/collection/wishlist")}>
+          <Text style={styles.seeAll}>See all</Text>
+        </Pressable>
+      </View>
+      <BookList
+        books={filteredWishlistBooks}
+        isLoading={false}
+        showDelete
+        onDelete={handleDeleteBook}
+        layout="carousel"
+      />
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Lent</Text>
+        <Pressable onPress={() => router.push("/collection/lent")}>
+          <Text style={styles.seeAll}>See all</Text>
+        </Pressable>
+      </View>
       <BookList books={filteredLentBooks} isLoading={false} layout="carousel" />
 
-      <View style={styles.sectionSpacing} />
-
-      <Text style={styles.sectionTitle}>Borrowed</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Borrowed</Text>
+        <Pressable onPress={() => router.push("/collection/borrowed")}>
+          <Text style={styles.seeAll}>See all</Text>
+        </Pressable>
+      </View>
       <BookList
         books={filteredBorrowedBooks}
         isLoading={false}
@@ -107,15 +148,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#111",
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#111",
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 16,
     marginBottom: 4,
   },
-  sectionSpacing: {
-    height: 8,
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#111",
+  },
+  seeAll: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#3a24ff",
   },
 });
