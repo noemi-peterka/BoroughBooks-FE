@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CoverCamera from "../components/CoverCamera";
 import ISBNScanner from "../components/ISBNScanner";
 import { useBooks, type CollectionType } from "../context/BooksContext";
+
 type GoogleBookItem = {
   id: string;
   volumeInfo?: {
@@ -41,6 +42,7 @@ export default function AddBookScreen() {
   const params = useLocalSearchParams<{ collection?: string }>();
 
   const collectionParam = params.collection;
+
   const targetCollection: CollectionType =
     collectionParam === "wishlist" ||
     collectionParam === "borrowed" ||
@@ -63,6 +65,24 @@ export default function AddBookScreen() {
   const [searchResults, setSearchResults] = useState<GoogleBookItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  const screenTitle =
+    targetCollection === "library"
+      ? "Add Book to My Books"
+      : targetCollection === "wishlist"
+      ? "Add Book to Wishlist"
+      : targetCollection === "lent"
+      ? "Add Book to Lent"
+      : "Add Book to Borrowed";
+
+  const saveButtonLabel =
+    targetCollection === "library"
+      ? "Save to My Books"
+      : targetCollection === "wishlist"
+      ? "Save to Wishlist"
+      : targetCollection === "lent"
+      ? "Save to Lent"
+      : "Save to Borrowed";
+
   const resetForm = () => {
     setTitle("");
     setAuthor("");
@@ -70,10 +90,10 @@ export default function AddBookScreen() {
     setYear("");
     setCover("");
     setDescription("");
-    setShowCamera(false);
-    setShowScanner(false);
     setSearchQuery("");
     setSearchResults([]);
+    setShowCamera(false);
+    setShowScanner(false);
   };
 
   const autofillForm = (book: GoogleBookItem) => {
@@ -85,9 +105,7 @@ export default function AddBookScreen() {
     setAuthor(info.authors?.join(", ") || "");
     setGenre(info.categories?.[0] || "");
     setDescription(info.description || "");
-    setCover(
-      info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || "",
-    );
+    setCover(info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || "");
 
     const publishedDate = info.publishedDate || "";
     const parsedYear = publishedDate.slice(0, 4);
@@ -109,7 +127,9 @@ export default function AddBookScreen() {
       setIsSearching(true);
 
       const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(trimmed)}&maxResults=10`,
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+          trimmed
+        )}&maxResults=10`
       );
 
       if (!response.ok) {
@@ -133,7 +153,9 @@ export default function AddBookScreen() {
       const cleanISBN = isbn.replace(/[^0-9Xx]/g, "");
 
       const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(cleanISBN)}`,
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(
+          cleanISBN
+        )}`
       );
 
       if (!response.ok) {
@@ -146,7 +168,7 @@ export default function AddBookScreen() {
       if (!firstMatch) {
         Alert.alert(
           "No match found",
-          `No Google Books result found for ISBN ${cleanISBN}.`,
+          `No Google Books result found for ISBN ${cleanISBN}.`
         );
         return;
       }
@@ -166,7 +188,7 @@ export default function AddBookScreen() {
     if (!title.trim() || !author.trim()) {
       Alert.alert(
         "Missing information",
-        "Please enter at least a title and author.",
+        "Please enter at least a title and author."
       );
       return;
     }
@@ -183,15 +205,6 @@ export default function AddBookScreen() {
     resetForm();
     router.back();
   };
-
-  const screenTitle =
-    targetCollection === "library"
-      ? "Add Book to Library"
-      : targetCollection === "wishlist"
-        ? "Add Book to Wishlist"
-        : targetCollection === "borrowed"
-          ? "Add Book to Borrowed"
-          : "Add Book to Lent";
 
   if (showCamera) {
     return (
@@ -215,14 +228,18 @@ export default function AddBookScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.iconButton}
           >
-            <Ionicons name="chevron-back" size={32} color="#111" />
+            <Ionicons name="chevron-back" size={30} color="#111" />
           </TouchableOpacity>
 
           <Text style={styles.heading}>{screenTitle}</Text>
@@ -254,10 +271,7 @@ export default function AddBookScreen() {
           )}
         </View>
 
-        <Pressable
-          style={styles.scanButton}
-          onPress={() => setShowScanner(true)}
-        >
+        <Pressable style={styles.scanButton} onPress={() => setShowScanner(true)}>
           <Text style={styles.scanButtonText}>Scan Barcode</Text>
         </Pressable>
 
@@ -342,15 +356,12 @@ export default function AddBookScreen() {
           </View>
         )}
 
-        <Pressable
-          style={styles.cameraButton}
-          onPress={() => setShowCamera(true)}
-        >
+        <Pressable style={styles.cameraButton} onPress={() => setShowCamera(true)}>
           <Text style={styles.cameraButtonText}>Take cover photo</Text>
         </Pressable>
 
         <Pressable style={styles.saveButton} onPress={handleAddBook}>
-          <Text style={styles.saveButtonText}>Save Book</Text>
+          <Text style={styles.saveButtonText}>{saveButtonLabel}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -358,27 +369,55 @@ export default function AddBookScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f7f7f7",
+  },
+  screen: {
+    flex: 1,
+    backgroundColor: "#f7f7f7",
+  },
   container: {
     padding: 20,
-    backgroundColor: "#f7f7f7",
+    paddingBottom: 40,
     flexGrow: 1,
   },
-  heading: {
-    fontSize: 26,
-    fontWeight: "700",
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
   },
-  input: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 14,
+  iconButton: {
+    width: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  heading: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#111",
+  },
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E9E9E9",
+    borderRadius: 18,
+    paddingHorizontal: 10,
+    height: 42,
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    marginHorizontal: 8,
+    fontSize: 14,
+    color: "#111",
   },
   scanButton: {
-    backgroundColor: "#444",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: "#3a24ff",
+    paddingVertical: 12,
+    borderRadius: 12,
     alignItems: "center",
     marginBottom: 16,
   },
@@ -393,7 +432,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#e2e2e2",
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 12,
     marginBottom: 8,
   },
@@ -401,9 +440,23 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 15,
     marginBottom: 4,
+    color: "#111",
   },
   resultAuthor: {
     color: "#666",
+  },
+  input: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 14,
+    color: "#111",
+  },
+  textArea: {
+    minHeight: 120,
+    textAlignVertical: "top",
   },
   coverPreview: {
     width: 140,
@@ -432,7 +485,7 @@ const styles = StyleSheet.create({
   cameraButton: {
     backgroundColor: "#e5e5e5",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: "center",
     marginBottom: 16,
   },
@@ -440,14 +493,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#111",
   },
-  textArea: {
-    minHeight: 120,
-    textAlignVertical: "top",
-  },
   saveButton: {
     backgroundColor: "#000",
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: "center",
     marginTop: 10,
   },
@@ -455,32 +504,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
-  },
-  searchWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E9E9E9",
-    borderRadius: 18,
-    paddingHorizontal: 10,
-    height: 38,
-    marginBottom: 16,
-  },
-  searchInput: {
-    flex: 1,
-    marginHorizontal: 8,
-    fontSize: 14,
-    color: "#111",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    marginBottom: 16,
-  },
-  iconButton: {
-    width: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
   },
 });
