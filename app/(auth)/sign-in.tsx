@@ -35,7 +35,9 @@ type FacebookProfile = {
   };
 };
 
-async function fetchGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
+async function fetchGoogleUserInfo(
+  accessToken: string
+): Promise<GoogleUserInfo> {
   const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -44,7 +46,9 @@ async function fetchGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo>
   return (await res.json()) as GoogleUserInfo;
 }
 
-async function fetchFacebookProfile(accessToken: string): Promise<FacebookProfile> {
+async function fetchFacebookProfile(
+  accessToken: string
+): Promise<FacebookProfile> {
   const res = await fetch(
     "https://graph.facebook.com/me?fields=id,name,email,picture.type(large)",
     { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -72,6 +76,20 @@ export default function SignInScreen() {
     });
   }, []);
 
+  const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  const googleAndroidClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+
+  const facebookAppId = process.env.EXPO_PUBLIC_FACEBOOK_APP_ID;
+
+  const googleEnabled =
+    (Platform.OS === "ios" && !!googleIosClientId) ||
+    (Platform.OS === "android" && !!googleAndroidClientId) ||
+    (Platform.OS === "web" && !!googleWebClientId);
+
+  const facebookEnabled = !!facebookAppId;
+
   const googleEnvMissing = useMemo(
     () =>
       missingEnv([
@@ -88,20 +106,27 @@ export default function SignInScreen() {
   );
 
   const [googleRequest, googleResponse, googlePromptAsync] =
-    Google.useAuthRequest({
-      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-      androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-      scopes: ["openid", "profile", "email"],
-    });
+  Google.useAuthRequest({
+    webClientId: googleWebClientId || "placeholder-web-client-id",
+    iosClientId: googleIosClientId || "placeholder-ios-client-id",
+    androidClientId:
+      googleAndroidClientId || "placeholder-android-client-id",
+    scopes: ["openid", "profile", "email"],
+  });
 
   const [facebookRequest, facebookResponse, facebookPromptAsync] =
-    Facebook.useAuthRequest({
-      clientId: process.env.EXPO_PUBLIC_FACEBOOK_APP_ID,
-      scopes: ["public_profile", "email"],
-      // Avoid fb{appId}://authorize, use our app scheme / Expo proxy.
-      redirectUri,
-    });
+    Facebook.useAuthRequest(
+      facebookEnabled
+        ? {
+            clientId: facebookAppId!,
+            scopes: ["public_profile", "email"],
+            redirectUri,
+          }
+        : {
+            clientId: "disabled",
+            redirectUri,
+          }
+    );
 
   useEffect(() => {
     const run = async (response: AuthSessionResult | null | undefined) => {
@@ -109,8 +134,8 @@ export default function SignInScreen() {
 
       const accessToken =
         response.authentication?.accessToken ??
-        // Some flows may return the token in params.
-        (response.params as any)?.access_token;
+        (response.params as { access_token?: string })?.access_token;
+
       const idToken = response.authentication?.idToken ?? null;
       const expiresIn = response.authentication?.expiresIn;
 
@@ -138,8 +163,10 @@ export default function SignInScreen() {
               ? Math.floor(Date.now() / 1000) + expiresIn
               : null,
         });
-      } catch (err: any) {
-        Alert.alert("Sign in failed", err?.message ?? "Google sign-in failed.");
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : "Google sign-in failed.";
+        Alert.alert("Sign in failed", message);
       } finally {
         setBusyProvider(null);
       }
@@ -154,7 +181,8 @@ export default function SignInScreen() {
 
       const accessToken =
         response.authentication?.accessToken ??
-        (response.params as any)?.access_token;
+        (response.params as { access_token?: string })?.access_token;
+
       const expiresIn = response.authentication?.expiresIn;
 
       if (!accessToken) {
@@ -181,11 +209,10 @@ export default function SignInScreen() {
               ? Math.floor(Date.now() / 1000) + expiresIn
               : null,
         });
-      } catch (err: any) {
-        Alert.alert(
-          "Sign in failed",
-          err?.message ?? "Facebook sign-in failed."
-        );
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : "Facebook sign-in failed.";
+        Alert.alert("Sign in failed", message);
       } finally {
         setBusyProvider(null);
       }
@@ -195,6 +222,18 @@ export default function SignInScreen() {
   }, [facebookResponse, signIn]);
 
   const handleGoogle = async () => {
+    if (!googleEnabled) {
+      Alert.alert(
+        "Google sign-in is not configured",
+        Platform.OS === "ios"
+          ? "Add EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID to your .env file."
+          : Platform.OS === "android"
+          ? "Add EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID to your .env file."
+          : "Add EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID to your .env file."
+      );
+      return;
+    }
+
     if (googleEnvMissing) {
       Alert.alert(
         "Missing config",
@@ -202,14 +241,25 @@ export default function SignInScreen() {
       );
       return;
     }
+
     try {
       await googlePromptAsync();
-    } catch (err: any) {
-      Alert.alert("Sign in failed", err?.message ?? "Google sign-in cancelled.");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Google sign-in cancelled.";
+      Alert.alert("Sign in failed", message);
     }
   };
 
   const handleFacebook = async () => {
+    if (!facebookEnabled) {
+      Alert.alert(
+        "Facebook sign-in is not configured",
+        "Add EXPO_PUBLIC_FACEBOOK_APP_ID to your .env file."
+      );
+      return;
+    }
+
     if (facebookEnvMissing) {
       Alert.alert(
         "Missing config",
@@ -217,13 +267,13 @@ export default function SignInScreen() {
       );
       return;
     }
+
     try {
       await facebookPromptAsync();
-    } catch (err: any) {
-      Alert.alert(
-        "Sign in failed",
-        err?.message ?? "Facebook sign-in cancelled."
-      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Facebook sign-in cancelled.";
+      Alert.alert("Sign in failed", message);
     }
   };
 
@@ -256,9 +306,19 @@ export default function SignInScreen() {
         idToken: credential.identityToken ?? null,
         expiresAt: null,
       });
-    } catch (err: any) {
-      if (err?.code === "ERR_REQUEST_CANCELED") return;
-      Alert.alert("Sign in failed", err?.message ?? "Apple sign-in failed.");
+    } catch (err: unknown) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        err.code === "ERR_REQUEST_CANCELED"
+      ) {
+        return;
+      }
+
+      const message =
+        err instanceof Error ? err.message : "Apple sign-in failed.";
+      Alert.alert("Sign in failed", message);
     } finally {
       setBusyProvider(null);
     }
@@ -271,13 +331,14 @@ export default function SignInScreen() {
         <Text style={styles.subtitle}>Sign in to continue</Text>
 
         <Pressable
-          disabled={!googleRequest || busyProvider !== null}
+          disabled={!googleEnabled || !googleRequest || busyProvider !== null}
           onPress={handleGoogle}
           style={({ pressed }) => [
             styles.button,
             styles.google,
             pressed && styles.pressed,
-            (!googleRequest || busyProvider !== null) && styles.disabled,
+            (!googleEnabled || !googleRequest || busyProvider !== null) &&
+              styles.disabled,
           ]}
         >
           <Text style={styles.buttonText}>Continue with Google</Text>
@@ -287,13 +348,14 @@ export default function SignInScreen() {
         </Pressable>
 
         <Pressable
-          disabled={!facebookRequest || busyProvider !== null}
+          disabled={!facebookEnabled || !facebookRequest || busyProvider !== null}
           onPress={handleFacebook}
           style={({ pressed }) => [
             styles.button,
             styles.facebook,
             pressed && styles.pressed,
-            (!facebookRequest || busyProvider !== null) && styles.disabled,
+            (!facebookEnabled || !facebookRequest || busyProvider !== null) &&
+              styles.disabled,
           ]}
         >
           <Text style={[styles.buttonText, styles.buttonTextLight]}>
@@ -325,7 +387,7 @@ export default function SignInScreen() {
         ) : null}
 
         <Text style={styles.note}>
-          Dev note: configure OAuth client IDs via `EXPO_PUBLIC_*` env vars.
+          Dev note: configure OAuth client IDs via EXPO_PUBLIC_* env vars.
         </Text>
       </View>
     </View>
