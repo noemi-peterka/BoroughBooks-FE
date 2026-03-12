@@ -1,15 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
-import BookList from "../../components/BookList";
-import { useBooks } from "../../context/BooksContext";
-import type { Book } from "../../data/lentBooks";
+import BookList from "../../../components/BookList";
+import { useBooks } from "../../../context/BooksContext";
+import type { Book } from "../../../context/BooksContext";
 
-export default function LentScreen() {
-  const { lentBooks, deleteBook } = useBooks();
+export default function BorrowedScreen() {
+  const { borrowedBooks, deleteBook } = useBooks();
   const [search, setSearch] = useState("");
 
-  const filteredBooks = lentBooks.filter((book) => {
+  const filteredBooks = borrowedBooks.filter((book) => {
     const query = search.trim().toLowerCase();
 
     return (
@@ -20,7 +20,7 @@ export default function LentScreen() {
   });
 
   const handleDeleteBook = (book: Book) => {
-    deleteBook("lent", book.id);
+    deleteBook("borrowed", book.id);
   };
 
   const handleLendBook = (book: Book) => {

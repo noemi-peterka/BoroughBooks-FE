@@ -1,15 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
-import BookList from "../../components/BookList";
-import { useBooks } from "../../context/BooksContext";
-import type { Book } from "../../data/borrowedBooks";
+import BookList from "../../../components/BookList";
+import { useBooks } from "../../../context/BooksContext";
+import type { Book } from "../../../context/BooksContext";
 
-export default function BorrowedScreen() {
-  const { borrowedBooks, deleteBook } = useBooks();
+export default function WishlistScreen() {
+  const { wishlistBooks, deleteBook } = useBooks();
   const [search, setSearch] = useState("");
 
-  const filteredBooks = borrowedBooks.filter((book) => {
+  const filteredBooks = wishlistBooks.filter((book) => {
     const query = search.trim().toLowerCase();
 
     return (
@@ -20,7 +20,7 @@ export default function BorrowedScreen() {
   });
 
   const handleDeleteBook = (book: Book) => {
-    deleteBook("borrowed", book.id);
+    deleteBook("wishlist", book.id);
   };
 
   const handleLendBook = (book: Book) => {

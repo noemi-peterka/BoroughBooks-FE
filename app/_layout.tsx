@@ -1,55 +1,63 @@
-import { Drawer } from "expo-router/drawer";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import CustomDrawerContent from "../components/CustomDrawerContent";
+import { useEffect } from "react";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 import { BooksProvider } from "../context/BooksContext";
+import { ActivityIndicator, View } from "react-native";
+
+function AuthGate() {
+  const { user, initializing } = useAuth();
+  const segments = useSegments() as string[];
+  const router = useRouter();
+
+  useEffect(() => {
+    if (initializing) return;
+
+    const inAuthRoute = segments[0] === "sign-in";
+
+    if (!user && !inAuthRoute) {
+      router.replace("/sign-in" as any);
+      return;
+    }
+
+    if (user && inAuthRoute) {
+      router.replace("/library");
+    }
+  }, [initializing, router, segments, user]);
+
+  return null;
+}
 
 export default function RootLayout() {
   return (
-    <BooksProvider>
-      <StatusBar style="dark" />
-      <Drawer
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Drawer.Screen
-          name="(tabs)"
-          options={{
-            title: "My library",
-          }}
-        />
+    <AuthProvider>
+      <BooksProvider>
+        <StatusBar style="dark" />
+        <RootNavigator />
+      </BooksProvider>
+    </AuthProvider>
+  );
+}
 
-        <Drawer.Screen
-          name="add-book"
-          options={{
-            title: "Add a book",
-          }}
-        />
+function RootNavigator() {
+  const { initializing } = useAuth();
 
-        <Drawer.Screen
-          name="friend/[id]"
-          options={{
-            drawerItemStyle: { display: "none" },
-            title: "Friend Details",
-          }}
-        />
+  if (initializing) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
-        <Drawer.Screen
-          name="chat/[id]"
-          options={{
-            drawerItemStyle: { display: "none" },
-            title: "Chat Details",
-          }}
-        />
-
-        <Drawer.Screen
-          name="+not-found"
-          options={{
-            drawerItemStyle: { display: "none" },
-          }}
-        />
-      </Drawer>
-    </BooksProvider>
+  return (
+    <>
+      <AuthGate />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(app)" />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </>
   );
 }

@@ -10,15 +10,7 @@ import {
   View,
 } from "react-native";
 
-export type Book = {
-  id: number;
-  title: string;
-  author: string;
-  genre: string;
-  year: number;
-  description: string;
-  cover?: string;
-};
+import type { Book } from "../context/BooksContext";
 
 type BookCardProps = {
   book: Book;

@@ -13,9 +13,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CoverCamera from "../components/CoverCamera";
-import ISBNScanner from "../components/ISBNScanner";
-import { CollectionType, useBooks } from "../context/BooksContext";
+import CoverCamera from "../../components/CoverCamera";
+import ISBNScanner from "../../components/ISBNScanner";
+import { CollectionType, useBooks } from "../../context/BooksContext";
 
 type GoogleBookItem = {
   id: string;

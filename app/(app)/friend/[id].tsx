@@ -11,10 +11,10 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BookList from "../../components/BookList";
-import UserSwitcher from "../../components/UserSwitcher";
-import { useBooks } from "../../context/BooksContext";
-import type { Book } from "../../context/BooksContext";
+import BookList from "../../../components/BookList";
+import UserSwitcher from "../../../components/UserSwitcher";
+import { useBooks } from "../../../context/BooksContext";
+import type { Book } from "../../../context/BooksContext";
 
 export default function FriendLibraryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -6,9 +6,9 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import { FriendList } from "../../components/FriendList";
-import UserSwitcher from "../../components/UserSwitcher";
-import { useBooks } from "../../context/BooksContext";
+import { FriendList } from "../../../components/FriendList";
+import UserSwitcher from "../../../components/UserSwitcher";
+import { useBooks } from "../../../context/BooksContext";
 
 export default function FriendsScreen() {
   const [search, setSearch] = useState("");

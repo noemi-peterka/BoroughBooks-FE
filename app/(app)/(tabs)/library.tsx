@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import BookList from "../../components/BookList";
-import { useBooks, type Book } from "../../context/BooksContext";
+import BookList from "../../../components/BookList";
+import { useBooks, type Book } from "../../../context/BooksContext";
 
 export default function Library() {
   const { libraryBooks, borrowedBooks, lentBooks, deleteBook } = useBooks();
@@ -66,7 +66,6 @@ export default function Library() {
         showDelete
         onDelete={handleDeleteBook}
         showAddTile
-        addToCollection="library"
       />
 
       <Text style={styles.sectionTitle}>Lent</Text>

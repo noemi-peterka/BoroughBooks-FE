@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import type { Book } from "../data/books";
+import type { Book } from "../context/BooksContext";
 import BookCard from "./BookCard";
 
 type LibraryItem = { type: "add"; id: string } | ({ type: "book" } & Book);

@@ -10,7 +10,18 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Configure OAuth (Google, Facebook, Apple)
+
+   - Copy `.env.example` to `.env` and fill in:
+     - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
+     - `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
+     - `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`
+     - `EXPO_PUBLIC_FACEBOOK_APP_ID`
+   - Redirect URI used by the app: `boroughbooksfe://auth`
+     - In Expo Go (dev) the app uses the Expo AuthSession proxy automatically.
+   - Apple Sign In requires a proper iOS bundle identifier and configuring Sign In with Apple in your Apple Developer account (works in iOS builds, not Android).
+
+3. Start the app
 
    ```bash
    npx expo start
