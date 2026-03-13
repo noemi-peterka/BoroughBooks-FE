@@ -59,7 +59,6 @@ export default function FriendsScreen() {
 
   return (
     <View style={styles.screen}>
-      <UserSwitcher />
 
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={18} color="#7A7A7A" />
