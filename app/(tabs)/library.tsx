@@ -53,6 +53,7 @@ export default function Library() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={18} color="#7A7A7A" />
         <TextInput

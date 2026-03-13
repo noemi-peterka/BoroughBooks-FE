@@ -16,6 +16,21 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+## OAuth (Google, Apple, Facebook)
+
+- Create `.env` based on `.env.example` and set:
+  - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
+  - `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
+  - `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`
+  - `EXPO_PUBLIC_FACEBOOK_APP_ID`
+- Redirect URI used in standalone/dev builds: `boroughbooksfe://auth`
+- Apple Sign In requires an iOS bundle identifier and Apple Developer setup.
+
+## Backend (optional)
+
+There is a simple dev backend in `backend/` (Express + file-based persistence) that can mint a JWT after Google/Facebook/Apple OAuth.
+See `backend/README.md`.
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)

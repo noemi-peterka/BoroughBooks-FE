@@ -1,63 +1,113 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
+import { useState } from "react";
+import {
+  Image,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useBooks } from "../context/BooksContext";
 
 export default function UserSwitcher() {
-  const { users, currentUserId, setCurrentUserId } = useBooks();
+  const { users, currentUser, setCurrentUserId } = useBooks();
+  const [visible, setVisible] = useState(false);
+
+  if (!currentUser) return null;
+
+  const handleSelectUser = (userId: string) => {
+    setCurrentUserId(userId);
+    setVisible(false);
+  };
 
   return (
-    <View style={styles.container}>
-      {users.map((user) => {
-        const active = currentUserId === user.id;
+    <>
+      <TouchableOpacity
+        onPress={() => setVisible(true)}
+        style={styles.trigger}
+        activeOpacity={0.8}
+      >
+        <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
+      </TouchableOpacity>
 
-        return (
-          <TouchableOpacity
-            key={user.id}
-            style={[styles.userButton, active && styles.userButtonActive]}
-            onPress={() => setCurrentUserId(user.id)}
-          >
-            <Image source={{ uri: user.avatar }} style={styles.avatar} />
-            <Text style={[styles.userText, active && styles.userTextActive]}>
-              {user.name}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
+        <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
+          <View style={styles.menu}>
+            {users.map((user) => {
+              const isActive = user.id === currentUser.id;
+
+              return (
+                <TouchableOpacity
+                  key={user.id}
+                  style={[styles.userRow, isActive && styles.userRowActive]}
+                  onPress={() => handleSelectUser(user.id)}
+                >
+                  <Image source={{ uri: user.avatar }} style={styles.menuAvatar} />
+                  <Text style={styles.userName}>{user.name}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-    backgroundColor: "#fff",
-  },
-  userButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  trigger: {
+    width: 36,
+    height: 36,
     borderRadius: 18,
-    backgroundColor: "#EFEFEF",
-  },
-  userButtonActive: {
-    backgroundColor: "#3a24ff",
+    overflow: "hidden",
   },
   avatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    marginRight: 8,
+    width: "100%",
+    height: "100%",
+    borderRadius: 18,
   },
-  userText: {
+  overlay: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+  menu: {
+    position: "absolute",
+    top: 90,
+    right: 16,
+    width: 180,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  userRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  userRowActive: {
+    backgroundColor: "#F5F3FF",
+  },
+  menuAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+  },
+  userName: {
+    fontSize: 15,
     color: "#111",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  userTextActive: {
-    color: "#fff",
+    fontWeight: "500",
   },
 });
