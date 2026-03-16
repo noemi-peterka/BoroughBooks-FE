@@ -1,21 +1,28 @@
 import { createContext, useContext, type PropsWithChildren } from "react";
 import { useStorageState } from "../data/useStorageState";
 
-const AuthContext = createContext<{
-  signIn: () => void;
+type User = {
+  username: string;
+  profile_pic_url: string;
+};
+
+type AuthContextType = {
+  signIn: (user: User) => void;
   signOut: () => void;
-  session?: string | null;
+  user: User | null;
   isLoading: boolean;
-}>({
+};
+
+const AuthContext = createContext<AuthContextType>({
   signIn: () => null,
   signOut: () => null,
-  session: null,
+  user: null,
   isLoading: false,
 });
 
-// This hook can be used to access the user info.
 export function useSession() {
   const value = useContext(AuthContext);
+
   if (!value) {
     throw new Error("useSession must be wrapped in a <SessionProvider />");
   }
@@ -24,19 +31,27 @@ export function useSession() {
 }
 
 export function SessionProvider({ children }: PropsWithChildren) {
-  const [[isLoading, session], setSession] = useStorageState("session");
+  const [[isLoading, storedUser], setStoredUser] = useStorageState("session");
+
+  let user: User | null = null;
+
+  try {
+    user = storedUser ? (JSON.parse(storedUser) as User) : null;
+  } catch (error) {
+    console.warn("Invalid stored session, clearing it");
+    setStoredUser(null);
+  }
 
   return (
     <AuthContext.Provider
       value={{
-        signIn: () => {
-          // Perform sign-in logic here
-          setSession("xxx");
+        signIn: (user: User) => {
+          setStoredUser(JSON.stringify(user));
         },
         signOut: () => {
-          setSession(null);
+          setStoredUser(null);
         },
-        session,
+        user,
         isLoading,
       }}
     >

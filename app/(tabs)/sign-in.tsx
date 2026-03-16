@@ -1,10 +1,16 @@
-import { router } from "expo-router";
-import { FlatList, Image, StyleSheet, Text, View } from "react-native";
-
-import { useSession } from "../../context/UserContext";
-
 import axios from "axios";
 import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+import { useSession } from "../../context/UserContext";
 
 type User = {
   username: string;
@@ -12,9 +18,10 @@ type User = {
 };
 
 export default function SignIn() {
-  const { signIn } = useSession();
+  const { signIn, user } = useSession();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedUsername, setSelectedUsername] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -24,12 +31,11 @@ export default function SignIn() {
         );
 
         const data = response.data as { users: any[] };
-        const mappedUsers: User[] = data.users.map(
-          (user: any, index: number) => ({
-            username: user.username,
-            profile_pic_url: user.profile_pic_url,
-          }),
-        );
+
+        const mappedUsers: User[] = data.users.map((user: any) => ({
+          username: user.username,
+          profile_pic_url: user.profile_pic_url,
+        }));
 
         setUsers(mappedUsers);
       } catch (error) {
@@ -42,62 +48,210 @@ export default function SignIn() {
     fetchUsers();
   }, []);
 
-  return (
-    <View style={styles.container}>
-      <FlatList
-        data={users}
-        keyExtractor={(item) => item.username.toString()}
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <View style={{ alignItems: "center", marginHorizontal: 10 }}>
-            <Image
-              source={{ uri: item.profile_pic_url }}
-              style={styles.avatar}
-            ></Image>
+  const handleSignIn = (selectedUser: User) => {
+    setSelectedUsername(selectedUser.username);
+    signIn(selectedUser);
+  };
 
-            <Text style={styles.subtitle}>{item.username}</Text>
-            <Text
-              onPress={() => {
-                signIn();
-                router.replace("/library");
-              }}
-            >
-              Sign In
-            </Text>
-          </View>
-        )}
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingText}>Loading profiles...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.screen}>
+      <Text style={styles.title}>Choose your profile</Text>
+      <Text style={styles.description}>
+        Pick a reader profile to view their library, friends, and activity.
+      </Text>
+
+      {selectedUsername ? (
+        <View style={styles.successBanner}>
+          <Text style={styles.successText}>
+            Signed in as {selectedUsername}
+          </Text>
+        </View>
+      ) : null}
+
+      <FlatList
+        contentContainerStyle={styles.listContent}
+        data={users}
+        keyExtractor={(item) => item.username}
+        renderItem={({ item }) => {
+          const isCurrentUser = user?.username === item.username;
+
+          return (
+            <View style={styles.card}>
+              {item.profile_pic_url ? (
+                <Image
+                  source={{ uri: item.profile_pic_url }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatar, styles.avatarFallback]}>
+                  <Text style={styles.avatarFallbackText}>
+                    {item.username.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.cardText}>
+                <Text style={styles.username}>{item.username}</Text>
+                <Text style={styles.subtext}>
+                  {isCurrentUser
+                    ? "This profile is active"
+                    : "Tap below to sign in as this reader"}
+                </Text>
+              </View>
+
+              <Pressable
+                style={[styles.button, isCurrentUser && styles.buttonDisabled]}
+                onPress={() => handleSignIn(item)}
+                disabled={isCurrentUser}
+              >
+                <Text
+                  style={[
+                    styles.buttonText,
+                    isCurrentUser && styles.buttonTextDisabled,
+                  ]}
+                >
+                  {isCurrentUser ? "Signed in" : "Sign in"}
+                </Text>
+              </Pressable>
+            </View>
+          );
+        }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 50,
-    flexDirection: "row",
+  screen: {
+    flex: 1,
+    backgroundColor: "#f7f4ef",
+    paddingHorizontal: 20,
+    paddingTop: 32,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
-    borderRadius: 16,
+    backgroundColor: "#f7f4ef",
+    padding: 24,
   },
-  pressed: {
-    opacity: 0.7,
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#5f5a55",
   },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    marginRight: 20,
-    backgroundColor: "#6e6e6eff",
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#2f2a25",
+    marginBottom: 8,
   },
-
-  name: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#111",
+  description: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#6b645d",
+    marginBottom: 20,
+  },
+  currentUserBanner: {
+    backgroundColor: "#ede4d8",
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  currentUserLabel: {
+    fontSize: 13,
+    color: "#7a6f63",
     marginBottom: 4,
   },
-  subtitle: {
+  currentUserName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#2f2a25",
+  },
+  successBanner: {
+    backgroundColor: "#dff4e4",
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  successText: {
+    color: "#1f6b36",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  listContent: {
+    paddingBottom: 24,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  avatar: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: "#d8d2ca",
+    marginRight: 14,
+  },
+  avatarFallback: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarFallbackText: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#5f5a55",
+  },
+  cardText: {
+    flex: 1,
+  },
+  username: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#2f2a25",
+    marginBottom: 4,
+  },
+  subtext: {
     fontSize: 14,
-    color: "#555",
+    color: "#6b645d",
+    lineHeight: 20,
+  },
+  button: {
+    backgroundColor: "#7c5cff",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    marginLeft: 12,
+  },
+  buttonDisabled: {
+    backgroundColor: "#d8d2ef",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  buttonTextDisabled: {
+    color: "#5f557e",
   },
 });
