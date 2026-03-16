@@ -1,30 +1,20 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-
-export type FriendCardProps = {
-  id: string;
-  name: string;
-  avatar: string;
-  subtitle?: string;
-  onPress?: (id: string) => void;
-};
+import { Friend } from "@/utils/getData";
 
 export const FriendCard = ({
-  id,
-  name,
-  avatar,
-  subtitle,
-  onPress,
-}: FriendCardProps) => {
+  relating_username,
+  profile_pic_url,
+  friend_status,
+}: Friend) => {
   return (
     <Pressable
-      onPress={() => onPress?.(id)}
+      // onPress={() => onPress?.(id)}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <Image source={{ uri: avatar }} style={styles.avatar} />
+      <Image source={{ uri: profile_pic_url }} style={styles.avatar} />
 
       <View style={styles.textContainer}>
-        <Text style={styles.name}>{name}</Text>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        <Text style={styles.name}>{relating_username}</Text>
       </View>
     </Pressable>
   );
