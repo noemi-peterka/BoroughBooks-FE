@@ -33,7 +33,7 @@ export default function BookCard({
 }: BookCardProps) {
   const [modalVisible, setModalVisible] = useState(false);
 
-  const hasCover = !!book.cover?.trim();
+  const hasCover = !!book.imagelinks?.trim();
 
   const handleRequest = () => {
     onRequest?.(book);
@@ -54,7 +54,7 @@ export default function BookCard({
     <>
       <Pressable style={styles.card} onPress={() => setModalVisible(true)}>
         {hasCover ? (
-          <Image source={{ uri: book.cover }} style={styles.image} />
+          <Image source={{ uri: book.imagelinks }} style={styles.image} />
         ) : (
           <View style={[styles.image, styles.fallbackCover]}>
             <Text style={styles.fallbackTitle} numberOfLines={4}>
@@ -76,10 +76,13 @@ export default function BookCard({
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.title}>{book.title}</Text>
-              <Text style={styles.author}>{book.author}</Text>
+              <Text style={styles.author}>{book.authors}</Text>
 
               {hasCover ? (
-                <Image source={{ uri: book.cover }} style={styles.modalImage} />
+                <Image
+                  source={{ uri: book.imagelinks }}
+                  style={styles.modalImage}
+                />
               ) : (
                 <View style={[styles.modalImage, styles.fallbackCover]}>
                   <Text style={styles.modalFallbackTitle} numberOfLines={5}>
@@ -117,7 +120,9 @@ export default function BookCard({
               </View>
 
               <Text style={styles.meta}>
-                {book.genre} • {book.year}
+                {book.published_date
+                  ? new Date(book.published_date).getFullYear()
+                  : ""}
               </Text>
 
               <Text style={styles.description}>{book.description}</Text>
@@ -140,7 +145,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 220,
     borderRadius: 8,
-},
+  },
 
   fallbackCover: {
     backgroundColor: "#4a4a4a",
