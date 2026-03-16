@@ -3,7 +3,7 @@ import { Friend } from "@/utils/getData";
 
 export const FriendCard = ({
   relating_username,
-  profile_pic_url,
+  friend_profile_pic_url,
   friend_status,
 }: Friend) => {
   return (
@@ -11,10 +11,13 @@ export const FriendCard = ({
       // onPress={() => onPress?.(id)}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <Image source={{ uri: profile_pic_url }} style={styles.avatar} />
+      <Image source={{ uri: friend_profile_pic_url }} style={styles.avatar} />
 
       <View style={styles.textContainer}>
         <Text style={styles.name}>{relating_username}</Text>
+        <Text style={styles.name}>
+          {friend_status === "accepted" ? "Friend" : friend_status}
+        </Text>
       </View>
     </Pressable>
   );

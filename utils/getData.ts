@@ -9,7 +9,8 @@ export type Friend = {
   origin_username: string;
   relating_username: string;
   friend_status: string;
-  profile_pic_url: string;
+  origin_profile_pic_url: string;
+  friend_profile_pic_url: string;
 };
 
 export async function getFriendsByUsername(
@@ -19,7 +20,9 @@ export async function getFriendsByUsername(
     const response = await axios.get<Friend[]>(
       `https://boroughbooks.onrender.com/api/users/${username}/friends`,
     );
-    console.log(response.data);
+
+    // console.log(response.data.usersFriends);
+    //@ts-ignore.   // we just want the array
     return response.data.usersFriends;
   } catch (error) {
     console.error("Error fetching friends:", error);
@@ -28,4 +31,4 @@ export async function getFriendsByUsername(
 }
 
 // To test uncomment below:
-// getFriendsByUsername("coolSurferDude");
+getFriendsByUsername("coolSurferDude");
