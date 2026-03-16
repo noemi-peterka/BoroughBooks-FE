@@ -3,7 +3,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type PropsWithChildren,
 } from "react";
@@ -22,6 +21,14 @@ export type Book = {
   imagelinks?: string;
 };
 
+type BooksResponse = {
+  books: Book[];
+};
+
+type WishListResponse = {
+  usersWishList: Book[];
+};
+
 type BooksContextType = {
   books: Book[];
   libraryBooks: Book[];
@@ -38,6 +45,8 @@ type BooksContextType = {
 
 const BooksContext = createContext<BooksContextType | undefined>(undefined);
 
+const API_BASE_URL = "https://boroughbooks.onrender.com/api";
+
 export function BooksProvider({ children }: PropsWithChildren) {
   const { user } = useSession();
 
@@ -48,12 +57,16 @@ export function BooksProvider({ children }: PropsWithChildren) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const clearAllBooks = () => {
+    setLibraryBooks([]);
+    setWishlistBooks([]);
+    setBorrowedBooks([]);
+    setLentBooks([]);
+  };
+
   const refetchBooks = async () => {
     if (!user?.username) {
-      setLibraryBooks([]);
-      setWishlistBooks([]);
-      setBorrowedBooks([]);
-      setLentBooks([]);
+      clearAllBooks();
       setErrorMessage(null);
       return;
     }
@@ -62,23 +75,21 @@ export function BooksProvider({ children }: PropsWithChildren) {
     setErrorMessage(null);
 
     try {
+      const username = encodeURIComponent(user.username);
+
       const [
         libraryResponse,
         loansResponse,
         borrowingResponse,
         wishListResponse,
       ] = await Promise.all([
-        axios.get(
-          `https://boroughbooks.onrender.com/api/users/${user.username}/my-library`,
+        axios.get<BooksResponse>(
+          `${API_BASE_URL}/users/${username}/my-library`,
         ),
-        axios.get(
-          `https://boroughbooks.onrender.com/api/users/${user.username}/loaned`,
-        ),
-        axios.get(
-          `https://boroughbooks.onrender.com/api/users/${user.username}/borrowed`,
-        ),
-        axios.get(
-          `https://boroughbooks.onrender.com/api/users/${user.username}/wish-list`,
+        axios.get<BooksResponse>(`${API_BASE_URL}/users/${username}/loaned`),
+        axios.get<BooksResponse>(`${API_BASE_URL}/users/${username}/borrowed`),
+        axios.get<WishListResponse>(
+          `${API_BASE_URL}/users/${username}/wish-list`,
         ),
       ]);
 
@@ -88,10 +99,7 @@ export function BooksProvider({ children }: PropsWithChildren) {
       setWishlistBooks(wishListResponse.data.usersWishList || []);
     } catch (error) {
       console.error("Failed to fetch user books:", error);
-      setLibraryBooks([]);
-      setLentBooks([]);
-      setBorrowedBooks([]);
-      setWishlistBooks([]);
+      clearAllBooks();
       setErrorMessage("Could not load this user's books.");
     } finally {
       setIsLoading(false);
@@ -102,80 +110,73 @@ export function BooksProvider({ children }: PropsWithChildren) {
     refetchBooks();
   }, [user?.username]);
 
-  const books = useMemo(() => {
-    return [...libraryBooks, ...wishlistBooks, ...borrowedBooks, ...lentBooks];
-  }, [libraryBooks, wishlistBooks, borrowedBooks, lentBooks]);
+  const books = [
+    [...libraryBooks, ...wishlistBooks, ...borrowedBooks, ...lentBooks],
+  ];
 
   const addBook = (collection: CollectionType, book: Book) => {
-    switch (collection) {
-      case "library":
-        setLibraryBooks((currentBooks) => [book, ...currentBooks]);
-        break;
-      case "wishlist":
-        setWishlistBooks((currentBooks) => [book, ...currentBooks]);
-        break;
-      case "borrowed":
-        setBorrowedBooks((currentBooks) => [book, ...currentBooks]);
-        break;
-      case "lent":
-        setLentBooks((currentBooks) => [book, ...currentBooks]);
-        break;
+    if (collection === "library") {
+      setLibraryBooks((currentBooks) => [book, ...currentBooks]);
+      return;
     }
+
+    if (collection === "wishlist") {
+      setWishlistBooks((currentBooks) => [book, ...currentBooks]);
+      return;
+    }
+
+    if (collection === "borrowed") {
+      setBorrowedBooks((currentBooks) => [book, ...currentBooks]);
+      return;
+    }
+
+    setLentBooks((currentBooks) => [book, ...currentBooks]);
   };
 
   const deleteBook = (collection: CollectionType, isbn: string) => {
-    switch (collection) {
-      case "library":
-        setLibraryBooks((currentBooks) =>
-          currentBooks.filter((book) => book.isbn !== isbn),
-        );
-        break;
-      case "wishlist":
-        setWishlistBooks((currentBooks) =>
-          currentBooks.filter((book) => book.isbn !== isbn),
-        );
-        break;
-      case "borrowed":
-        setBorrowedBooks((currentBooks) =>
-          currentBooks.filter((book) => book.isbn !== isbn),
-        );
-        break;
-      case "lent":
-        setLentBooks((currentBooks) =>
-          currentBooks.filter((book) => book.isbn !== isbn),
-        );
-        break;
+    if (collection === "library") {
+      setLibraryBooks((currentBooks) =>
+        currentBooks.filter((book) => book.isbn !== isbn),
+      );
+      return;
     }
+
+    if (collection === "wishlist") {
+      setWishlistBooks((currentBooks) =>
+        currentBooks.filter((book) => book.isbn !== isbn),
+      );
+      return;
+    }
+
+    if (collection === "borrowed") {
+      setBorrowedBooks((currentBooks) =>
+        currentBooks.filter((book) => book.isbn !== isbn),
+      );
+      return;
+    }
+
+    setLentBooks((currentBooks) =>
+      currentBooks.filter((book) => book.isbn !== isbn),
+    );
   };
 
   const getBookById = (isbn?: string) => {
     return books.find((book) => book.isbn === isbn);
   };
 
-  const value = useMemo(
-    () => ({
-      books,
-      libraryBooks,
-      wishlistBooks,
-      borrowedBooks,
-      lentBooks,
-      isLoading,
-      errorMessage,
-      addBook,
-      deleteBook,
-      getBookById,
-      refetchBooks,
-    }),
-    [
-      books,
-      libraryBooks,
-      wishlistBooks,
-      borrowedBooks,
-      lentBooks,
-      isLoading,
-      errorMessage,
-    ],
-  );
+  const value = {
+    books,
+    libraryBooks,
+    wishlistBooks,
+    borrowedBooks,
+    lentBooks,
+    isLoading,
+    errorMessage,
+    addBook,
+    deleteBook,
+    getBookById,
+    refetchBooks,
+  };
 
   return (
     <BooksContext.Provider value={value}>{children}</BooksContext.Provider>
