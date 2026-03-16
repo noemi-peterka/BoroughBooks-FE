@@ -1,3 +1,4 @@
+import { useSession } from "@/context/UserContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -16,6 +17,7 @@ export default function Library() {
   const { libraryBooks, borrowedBooks, lentBooks, wishlistBooks, deleteBook } =
     useBooks();
   const [search, setSearch] = useState("");
+  const { user } = useSession();
 
   const query = search.trim().toLowerCase();
 
@@ -53,7 +55,6 @@ export default function Library() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={18} color="#7A7A7A" />
         <TextInput

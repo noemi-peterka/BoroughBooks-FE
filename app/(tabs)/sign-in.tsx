@@ -66,7 +66,7 @@ export default function SignIn() {
     <View style={styles.screen}>
       <Text style={styles.title}>Choose your profile</Text>
       <Text style={styles.description}>
-        Pick a reader profile to view their library, friends, and activity.
+        Pick a profile to view their library, friends, and activity.
       </Text>
 
       {selectedUsername ? (
@@ -101,11 +101,6 @@ export default function SignIn() {
 
               <View style={styles.cardText}>
                 <Text style={styles.username}>{item.username}</Text>
-                <Text style={styles.subtext}>
-                  {isCurrentUser
-                    ? "This profile is active"
-                    : "Tap below to sign in as this reader"}
-                </Text>
               </View>
 
               <Pressable
