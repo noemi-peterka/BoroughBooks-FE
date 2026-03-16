@@ -1,7 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { DrawerToggleButton } from "@react-navigation/drawer";
 import { Tabs } from "expo-router";
-import UserSwitcher from "../../components/UserSwitcher"
 
 export default function TabLayout() {
   return (
@@ -9,7 +8,6 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: "#3a24ffff",
         headerLeft: () => <DrawerToggleButton />,
-        headerRight: () => <UserSwitcher />
       }}
     >
       <Tabs.Screen

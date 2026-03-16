@@ -28,25 +28,9 @@ export default function RootLayout() {
             }}
           />
           <Drawer.Screen
-            name="sign-in"
+            name="(tabs)/sign-in"
             options={{
               title: "Sign in",
-            }}
-          />
-
-          <Drawer.Screen
-            name="friend/[id]"
-            options={{
-              drawerItemStyle: { display: "none" },
-              title: "Friend Details",
-            }}
-          />
-
-          <Drawer.Screen
-            name="chat/[id]"
-            options={{
-              drawerItemStyle: { display: "none" },
-              title: "Chat Details",
             }}
           />
 
