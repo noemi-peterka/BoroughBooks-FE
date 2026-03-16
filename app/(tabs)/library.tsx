@@ -31,33 +31,33 @@ export default function Library() {
   const availableBooks = libraryBooks.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
+      book.authors.toLowerCase().includes(query)
     );
   });
 
   const filteredLentBooks = lentBooks.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
+      book.authors.toLowerCase().includes(query)
     );
   });
 
   const filteredBorrowedBooks = borrowedBooks.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
+      book.authors.toLowerCase().includes(query)
     );
   });
 
   const filteredWishlistBooks = wishlistBooks.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
+      book.authors.toLowerCase().includes(query)
     );
   });
 
   const handleDeleteBook = (book: Book) => {
-    deleteBook("library", book.id);
+    deleteBook("library", book.isbn);
   };
 
   return (
@@ -115,7 +115,7 @@ export default function Library() {
         books={filteredWishlistBooks}
         isLoading={isLoading}
         showDelete
-        onDelete={(book) => deleteBook("wishlist", book.id)}
+        onDelete={(book) => deleteBook("wishlist", book.isbn)}
         layout="carousel"
       />
 

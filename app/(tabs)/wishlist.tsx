@@ -13,12 +13,12 @@ export default function WishlistScreen() {
 
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
+      book.authors.toLowerCase().includes(query)
     );
   });
 
   const handleDeleteBook = (book: Book) => {
-    deleteBook("wishlist", book.id);
+    deleteBook("wishlist", book.isbn);
   };
 
   const handleLendBook = (book: Book) => {

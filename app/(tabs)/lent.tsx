@@ -13,12 +13,12 @@ export default function LentScreen() {
 
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
+      book.authors.toLowerCase().includes(query)
     );
   });
 
   const handleDeleteBook = (book: Book) => {
-    deleteBook("lent", book.id);
+    deleteBook("lent", book.isbn);
   };
 
   const handleLendBook = (book: Book) => {

@@ -12,14 +12,14 @@ export default function BorrowedScreen() {
     const query = search.trim().toLowerCase();
 
     return (
-      book.cover &&
+      book.imagelinks &&
       (book.title.toLowerCase().includes(query) ||
-        book.author.toLowerCase().includes(query))
+        book.authors.toLowerCase().includes(query))
     );
   });
 
   const handleDeleteBook = (book: Book) => {
-    deleteBook("borrowed", book.id);
+    deleteBook("borrowed", book.isbn);
   };
 
   const handleLendBook = (book: Book) => {

@@ -9,21 +9,9 @@ import {
 } from "react";
 import { useSession } from "./UserContext";
 
-export type BookStatus = "available" | "lent" | "borrowed" | "wishlist";
+export type CollectionType = "library" | "wishlist" | "borrowed" | "lent";
 
 export type Book = {
-  id: number;
-  title: string;
-  author: string;
-  genre?: string;
-  year: number;
-  cover?: string;
-  description: string;
-  ownerId?: string;
-  status?: BookStatus;
-};
-
-type ApiBook = {
   isbn: string;
   username?: string;
   title: string;
@@ -34,10 +22,6 @@ type ApiBook = {
   imagelinks?: string;
 };
 
-type NewBook = Omit<Book, "id" | "ownerId" | "status">;
-
-export type CollectionType = "library" | "wishlist" | "borrowed" | "lent";
-
 type BooksContextType = {
   books: Book[];
   libraryBooks: Book[];
@@ -46,35 +30,13 @@ type BooksContextType = {
   lentBooks: Book[];
   isLoading: boolean;
   errorMessage: string | null;
-
-  addBook: (collection: CollectionType, book: NewBook) => void;
-  deleteBook: (collection: CollectionType, id: number) => void;
-  getBookById: (bookId?: number) => Book | undefined;
+  addBook: (collection: CollectionType, book: Book) => void;
+  deleteBook: (collection: CollectionType, isbn: string) => void;
+  getBookById: (isbn?: string) => Book | undefined;
   refetchBooks: () => Promise<void>;
 };
 
 const BooksContext = createContext<BooksContextType | undefined>(undefined);
-
-function mapApiBookToBook(
-  book: ApiBook,
-  ownerId: string | undefined,
-  status: BookStatus,
-  index: number,
-): Book {
-  return {
-    id: Number(book.isbn) || index + 1,
-    title: book.title,
-    author: book.authors || "Unknown author",
-    genre: undefined,
-    year: book.published_date
-      ? new Date(book.published_date).getFullYear()
-      : new Date().getFullYear(),
-    cover: book.imagelinks || "",
-    description: book.description || "No description provided.",
-    ownerId,
-    status,
-  };
-}
 
 export function BooksProvider({ children }: PropsWithChildren) {
   const { user } = useSession();
@@ -120,37 +82,10 @@ export function BooksProvider({ children }: PropsWithChildren) {
         ),
       ]);
 
-      const libraryData = libraryResponse.data as { books: ApiBook[] };
-      const loansData = loansResponse.data as { books: ApiBook[] };
-      const borrowingData = borrowingResponse.data as { books: ApiBook[] };
-      const wishListData = wishListResponse.data as {
-        usersWishList: ApiBook[];
-      };
-
-      const mappedLibraryBooks: Book[] = (libraryData.books || []).map(
-        (book, index) =>
-          mapApiBookToBook(book, user.username, "available", index),
-      );
-
-      const mappedLentBooks: Book[] = (loansData.books || []).map(
-        (book, index) => mapApiBookToBook(book, user.username, "lent", index),
-      );
-
-      const mappedBorrowedBooks: Book[] = (borrowingData.books || []).map(
-        (book, index) =>
-          mapApiBookToBook(book, user.username, "borrowed", index),
-      );
-
-      const mappedWishlistBooks: Book[] = (
-        wishListData.usersWishList || []
-      ).map((book, index) =>
-        mapApiBookToBook(book, user.username, "wishlist", index),
-      );
-
-      setLibraryBooks(mappedLibraryBooks);
-      setLentBooks(mappedLentBooks);
-      setBorrowedBooks(mappedBorrowedBooks);
-      setWishlistBooks(mappedWishlistBooks);
+      setLibraryBooks(libraryResponse.data.books || []);
+      setLentBooks(loansResponse.data.books || []);
+      setBorrowedBooks(borrowingResponse.data.books || []);
+      setWishlistBooks(wishListResponse.data.usersWishList || []);
     } catch (error) {
       console.error("Failed to fetch user books:", error);
       setLibraryBooks([]);
@@ -165,70 +100,56 @@ export function BooksProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     refetchBooks();
-  }, [user]);
+  }, [user?.username]);
 
   const books = useMemo(() => {
     return [...libraryBooks, ...wishlistBooks, ...borrowedBooks, ...lentBooks];
   }, [libraryBooks, wishlistBooks, borrowedBooks, lentBooks]);
 
-  const addBook = (collection: CollectionType, book: NewBook) => {
-    const newBook: Book = {
-      id: Date.now(),
-      ...book,
-      ownerId: user?.username,
-      status:
-        collection === "library"
-          ? "available"
-          : collection === "wishlist"
-            ? "wishlist"
-            : collection === "borrowed"
-              ? "borrowed"
-              : "lent",
-    };
-
+  const addBook = (collection: CollectionType, book: Book) => {
     switch (collection) {
       case "library":
-        setLibraryBooks((currentBooks) => [newBook, ...currentBooks]);
+        setLibraryBooks((currentBooks) => [book, ...currentBooks]);
         break;
       case "wishlist":
-        setWishlistBooks((currentBooks) => [newBook, ...currentBooks]);
+        setWishlistBooks((currentBooks) => [book, ...currentBooks]);
         break;
       case "borrowed":
-        setBorrowedBooks((currentBooks) => [newBook, ...currentBooks]);
+        setBorrowedBooks((currentBooks) => [book, ...currentBooks]);
         break;
       case "lent":
-        setLentBooks((currentBooks) => [newBook, ...currentBooks]);
+        setLentBooks((currentBooks) => [book, ...currentBooks]);
         break;
     }
   };
 
-  const deleteBook = (collection: CollectionType, id: number) => {
+  const deleteBook = (collection: CollectionType, isbn: string) => {
     switch (collection) {
       case "library":
         setLibraryBooks((currentBooks) =>
-          currentBooks.filter((book) => book.id !== id),
+          currentBooks.filter((book) => book.isbn !== isbn),
         );
         break;
       case "wishlist":
         setWishlistBooks((currentBooks) =>
-          currentBooks.filter((book) => book.id !== id),
+          currentBooks.filter((book) => book.isbn !== isbn),
         );
         break;
       case "borrowed":
         setBorrowedBooks((currentBooks) =>
-          currentBooks.filter((book) => book.id !== id),
+          currentBooks.filter((book) => book.isbn !== isbn),
         );
         break;
       case "lent":
         setLentBooks((currentBooks) =>
-          currentBooks.filter((book) => book.id !== id),
+          currentBooks.filter((book) => book.isbn !== isbn),
         );
         break;
     }
   };
 
-  const getBookById = (bookId?: number) => {
-    return books.find((book) => book.id === bookId);
+  const getBookById = (isbn?: string) => {
+    return books.find((book) => book.isbn === isbn);
   };
 
   const value = useMemo(
