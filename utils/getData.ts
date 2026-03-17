@@ -55,10 +55,35 @@ export async function getBookById(isbn: string): Promise<FetchedBookByIsbn[]> {
     console.log(response.data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching friends:", error);
+    console.error("Error fetching book", error);
     return [];
   }
 }
 
-// / To test uncomment below:
-getBookById("9781911547860");
+// To test uncomment below and use npx tsx utils/getData.ts:
+// getBookById("9781911547860");
+
+export type PostedBookBody = {
+  isbn: string;
+  title: string;
+  authors: string;
+  publisher: string;
+  published_date: string;
+  description: string;
+  imagelinks: string;
+};
+
+export async function postBookFunction(
+  postedBookBody: PostedBookBody,
+): Promise<{ status: 201 }> {
+  try {
+    const response = await axios.post<{ status: 201 }>(
+      `https://boroughbooks.onrender.com/api/books`,
+      postedBookBody,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error posting book:", error);
+    throw error;
+  }
+}
