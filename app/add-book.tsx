@@ -1,6 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
+import { useSession } from "@/context/UserContext";
+
 import {
   Alert,
   FlatList,
@@ -17,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CoverCamera from "../components/CoverCamera";
 import ISBNScanner from "../components/ISBNScanner";
 import { useBooks, type CollectionType } from "../context/BooksContext";
+import { handleAddBook, type Book } from "../utils/getData";
 
 type GoogleBookItem = {
   id: string;
@@ -39,6 +42,8 @@ type GoogleBookItem = {
 
 export default function AddBookScreen() {
   const { addBook } = useBooks();
+  const { user } = useSession();
+
   const params = useLocalSearchParams<{ collection?: string }>();
 
   const collectionParam = params.collection;
@@ -55,9 +60,10 @@ export default function AddBookScreen() {
   const [showScanner, setShowScanner] = useState(false);
 
   const [title, setTitle] = useState("");
+  const [isbn, setIsbn] = useState("");
   const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState("");
-  const [year, setYear] = useState("");
+  const [publishedDate, setPublishedDate] = useState("");
   const [cover, setCover] = useState("");
   const [description, setDescription] = useState("");
 
@@ -69,25 +75,26 @@ export default function AddBookScreen() {
     targetCollection === "library"
       ? "Add Book to My Books"
       : targetCollection === "wishlist"
-      ? "Add Book to Wishlist"
-      : targetCollection === "lent"
-      ? "Add Book to Lent"
-      : "Add Book to Borrowed";
+        ? "Add Book to Wishlist"
+        : targetCollection === "lent"
+          ? "Add Book to Lent"
+          : "Add Book to Borrowed";
 
   const saveButtonLabel =
     targetCollection === "library"
       ? "Save to My Books"
       : targetCollection === "wishlist"
-      ? "Save to Wishlist"
-      : targetCollection === "lent"
-      ? "Save to Lent"
-      : "Save to Borrowed";
+        ? "Save to Wishlist"
+        : targetCollection === "lent"
+          ? "Save to Lent"
+          : "Save to Borrowed";
 
   const resetForm = () => {
     setTitle("");
+    setIsbn("");
     setAuthor("");
     setGenre("");
-    setYear("");
+    setPublishedDate("");
     setCover("");
     setDescription("");
     setSearchQuery("");
@@ -103,13 +110,16 @@ export default function AddBookScreen() {
 
     setTitle(info.title || "");
     setAuthor(info.authors?.join(", ") || "");
+    setIsbn(info.isbn?.join(", ") || ""); ///
     setGenre(info.categories?.[0] || "");
     setDescription(info.description || "");
-    setCover(info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || "");
+    setCover(
+      info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || "",
+    );
 
     const publishedDate = info.publishedDate || "";
     const parsedYear = publishedDate.slice(0, 4);
-    setYear(/^\d{4}$/.test(parsedYear) ? parsedYear : "");
+    setPublishedDate(/^\d{4}$/.test(parsedYear) ? parsedYear : "");
 
     setSearchResults([]);
     setSearchQuery(info.title || "");
@@ -128,8 +138,8 @@ export default function AddBookScreen() {
 
       const response = await fetch(
         `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
-          trimmed
-        )}&maxResults=10`
+          trimmed,
+        )}&maxResults=10`,
       );
 
       if (!response.ok) {
@@ -154,8 +164,8 @@ export default function AddBookScreen() {
 
       const response = await fetch(
         `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(
-          cleanISBN
-        )}`
+          cleanISBN,
+        )}`,
       );
 
       if (!response.ok) {
@@ -168,7 +178,7 @@ export default function AddBookScreen() {
       if (!firstMatch) {
         Alert.alert(
           "No match found",
-          `No Google Books result found for ISBN ${cleanISBN}.`
+          `No Google Books result found for ISBN ${cleanISBN}.`,
         );
         return;
       }
@@ -184,27 +194,52 @@ export default function AddBookScreen() {
     }
   };
 
-  const handleAddBook = () => {
+  const handleAddBookPress = async () => {
     if (!title.trim() || !author.trim()) {
       Alert.alert(
         "Missing information",
-        "Please enter at least a title and author."
+        "Please enter at least a title and author.",
       );
       return;
     }
 
-    addBook(targetCollection, {
+    if (!user?.username) {
+      Alert.alert("Error", "Please logged in to add books.");
+      return;
+    }
+    const bookData: Book = {
       title: title.trim(),
-      author: author.trim(),
-      genre: genre.trim() || "Unknown",
-      year: Number(year) || new Date().getFullYear(),
-      cover: cover.trim(),
-      description: description.trim() || "No description provided.",
-    });
+      authors: author.trim(),
+      isbn: isbn.trim(),
+      publisher: "",
+      published_date:
+        publishedDate.trim() || new Date().getFullYear().toString(),
+      imagelinks: cover.trim(),
+      description: description.trim(),
+    };
 
-    resetForm();
-    router.back();
+    const result = await handleAddBook(user.username, bookData);
+
+    if (result) {
+      resetForm();
+      router.back();
+    } else {
+      Alert.alert("Error", "Failed to add book.");
+    }
   };
+
+  //   addBook(targetCollection, {
+  //     title: title.trim(),
+  //     authors: author.trim(),
+  //     isbn: isbn.trim(),
+  //     published_date: Number(publishedDate) || new Date().getFullYear(),
+  //     imagelinks: cover.trim(),
+  //     description: description.trim() || "No description provided.",
+  //   });
+
+  //   resetForm();
+  //   router.back();
+  // };
 
   if (showCamera) {
     return (
@@ -271,7 +306,10 @@ export default function AddBookScreen() {
           )}
         </View>
 
-        <Pressable style={styles.scanButton} onPress={() => setShowScanner(true)}>
+        <Pressable
+          style={styles.scanButton}
+          onPress={() => setShowScanner(true)}
+        >
           <Text style={styles.scanButtonText}>Scan Barcode</Text>
         </Pressable>
 
@@ -304,6 +342,13 @@ export default function AddBookScreen() {
 
         <TextInput
           style={styles.input}
+          placeholder="Book ISBN"
+          value={isbn}
+          onChangeText={setIsbn}
+        />
+
+        <TextInput
+          style={styles.input}
           placeholder="Book title"
           value={title}
           onChangeText={setTitle}
@@ -318,16 +363,9 @@ export default function AddBookScreen() {
 
         <TextInput
           style={styles.input}
-          placeholder="Genre"
-          value={genre}
-          onChangeText={setGenre}
-        />
-
-        <TextInput
-          style={styles.input}
           placeholder="Year"
-          value={year}
-          onChangeText={setYear}
+          value={publishedDate}
+          onChangeText={setPublishedDate}
           keyboardType="numeric"
         />
 
@@ -356,11 +394,14 @@ export default function AddBookScreen() {
           </View>
         )}
 
-        <Pressable style={styles.cameraButton} onPress={() => setShowCamera(true)}>
+        <Pressable
+          style={styles.cameraButton}
+          onPress={() => setShowCamera(true)}
+        >
           <Text style={styles.cameraButtonText}>Take cover photo</Text>
         </Pressable>
 
-        <Pressable style={styles.saveButton} onPress={handleAddBook}>
+        <Pressable style={styles.saveButton} onPress={handleAddBookPress}>
           <Text style={styles.saveButtonText}>{saveButtonLabel}</Text>
         </Pressable>
       </ScrollView>

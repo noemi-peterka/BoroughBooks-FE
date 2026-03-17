@@ -35,8 +35,8 @@ export async function getFriendsByUsername(
 
 // Get book by book id
 
-export type FetchedBookByIsbn = {
-  isbn: "9781608464456";
+export type Book = {
+  isbn: string;
   title: string;
   authors: string;
   publisher: string;
@@ -45,11 +45,9 @@ export type FetchedBookByIsbn = {
   imagelinks: string;
 };
 
-// Get book by book id
-
-export async function getBookById(isbn: string): Promise<FetchedBookByIsbn[]> {
+export async function getBookById(isbn: string): Promise<Book[]> {
   try {
-    const response = await axios.get<FetchedBookByIsbn[]>(
+    const response = await axios.get<Book[]>(
       `https://boroughbooks.onrender.com/api/books/${isbn}`,
     );
     console.log(response.data);
@@ -63,18 +61,31 @@ export async function getBookById(isbn: string): Promise<FetchedBookByIsbn[]> {
 // To test uncomment below and use npx tsx utils/getData.ts:
 // getBookById("9781911547860");
 
-export type PostedBookBody = {
-  isbn: string;
-  title: string;
-  authors: string;
-  publisher: string;
-  published_date: string;
-  description: string;
-  imagelinks: string;
-};
+//Get users book by book id
+
+export async function usersBookById(
+  username: string,
+  isbn: string,
+): Promise<Book[]> {
+  try {
+    const response = await axios.get<Book[]>(
+      `https://boroughbooks.onrender.com/api/users/${username}/my-library/${isbn}`,
+    );
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching book", error);
+    return [];
+  }
+}
+
+// To test uncomment below and use npx tsx utils/getData.ts:
+// getBookById("9781911547860");
+
+// Post book to book table
 
 export async function postBookFunction(
-  postedBookBody: PostedBookBody,
+  postedBookBody: Book,
 ): Promise<{ status: 201 }> {
   try {
     const response = await axios.post<{ status: 201 }>(
@@ -84,6 +95,48 @@ export async function postBookFunction(
     return response.data;
   } catch (error) {
     console.error("Error posting book:", error);
+    throw error;
+  }
+}
+
+// Post Book to users_book table
+
+export async function postUsersBookFunction(
+  username: string,
+  postedBookBody: Book,
+): Promise<{ status: 201 }> {
+  try {
+    const response = await axios.post<{ status: 201 }>(
+      `https://boroughbooks.onrender.com/api/users/${username}/my-library`,
+      postedBookBody,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error posting book:", error);
+    throw error;
+  }
+}
+
+// Handle Add Book
+
+export async function handleAddBook(
+  username: string,
+  bookData: Book,
+): Promise<Book | undefined> {
+  try {
+    const existingBook = await getBookById(bookData.isbn);
+    if (existingBook.length < 1) {
+      await postBookFunction(bookData);
+    }
+
+    const checkUsersBooks = await usersBookById(username, bookData.isbn);
+    if (checkUsersBooks.length < 1) {
+      await postUsersBookFunction(username, bookData);
+    }
+
+    return bookData;
+  } catch (error) {
+    console.error("Error searching book", error);
     throw error;
   }
 }
