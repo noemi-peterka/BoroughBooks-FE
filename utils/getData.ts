@@ -32,3 +32,28 @@ export async function getFriendsByUsername(
 
 // To test uncomment below:
 getFriendsByUsername("coolSurferDude");
+
+// Get book by book id
+
+export type Book = {
+  isbn: "9781608464456";
+  title: string;
+  authors: string;
+  publisher: string;
+  published_date: string;
+  description: string;
+  imagelinks: string;
+};
+
+export async function getBookById(isbn: string): Promise<Book[]> {
+  try {
+    const response = await axios.get<Book[]>(
+      `https://boroughbooks.onrender.com/api/books/${isbn}`,
+    );
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching friends:", error);
+    return [];
+  }
+}
