@@ -31,11 +31,11 @@ export async function getFriendsByUsername(
 }
 
 // To test uncomment below:
-getFriendsByUsername("coolSurferDude");
+// getFriendsByUsername("coolSurferDude");
 
 // Get book by book id
 
-export type Book = {
+export type FetchedBookByIsbn = {
   isbn: "9781608464456";
   title: string;
   authors: string;
@@ -45,9 +45,11 @@ export type Book = {
   imagelinks: string;
 };
 
-export async function getBookById(isbn: string): Promise<Book[]> {
+// Get book by book id
+
+export async function getBookById(isbn: string): Promise<FetchedBookByIsbn[]> {
   try {
-    const response = await axios.get<Book[]>(
+    const response = await axios.get<FetchedBookByIsbn[]>(
       `https://boroughbooks.onrender.com/api/books/${isbn}`,
     );
     console.log(response.data);
@@ -57,3 +59,6 @@ export async function getBookById(isbn: string): Promise<Book[]> {
     return [];
   }
 }
+
+// / To test uncomment below:
+getBookById("9781911547860");
