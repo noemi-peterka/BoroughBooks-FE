@@ -16,7 +16,7 @@ export type Book = {
   title: string;
   authors: string;
   publisher?: string;
-  published_date?: string;
+  published_date?: string | number;
   description?: string;
   imagelinks?: string;
 };

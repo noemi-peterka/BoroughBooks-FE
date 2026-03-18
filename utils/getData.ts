@@ -20,8 +20,6 @@ export async function getFriendsByUsername(
     const response = await axios.get<Friend[]>(
       `https://boroughbooks.onrender.com/api/users/${username}/friends`,
     );
-
-    // console.log(response.data.usersFriends);
     //@ts-ignore.   // we just want the array
     return response.data.usersFriends;
   } catch (error) {
@@ -30,40 +28,9 @@ export async function getFriendsByUsername(
   }
 }
 
-// To test uncomment below:
-// getFriendsByUsername("coolSurferDude");
+// Get book from books table by book id
 
-// Get book by book id
-
-export type FetchedBookByIsbn = {
-  isbn: "9781608464456";
-  title: string;
-  authors: string;
-  publisher: string;
-  published_date: string;
-  description: string;
-  imagelinks: string;
-};
-
-// Get book by book id
-
-export async function getBookById(isbn: string): Promise<FetchedBookByIsbn[]> {
-  try {
-    const response = await axios.get<FetchedBookByIsbn[]>(
-      `https://boroughbooks.onrender.com/api/books/${isbn}`,
-    );
-    console.log(response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching book", error);
-    return [];
-  }
-}
-
-// To test uncomment below and use npx tsx utils/getData.ts:
-// getBookById("9781911547860");
-
-export type PostedBookBody = {
+export type Book = {
   isbn: string;
   title: string;
   authors: string;
@@ -73,8 +40,40 @@ export type PostedBookBody = {
   imagelinks: string;
 };
 
+export async function getBookById(isbn: string): Promise<Book[]> {
+  try {
+    const response = await axios.get<{ book: Book[] }>(
+      `https://boroughbooks.onrender.com/api/books/${isbn}`,
+    );
+    console.log(response.data);
+    return response.data.book || [];
+  } catch (error) {
+    console.error("Error fetching book", error);
+    return [];
+  }
+}
+
+//Get users book by username and book id
+
+export async function usersBookByIsbn(
+  username: string,
+  isbn: string,
+): Promise<Book[]> {
+  try {
+    const response = await axios.get<{ usersBookByIsbn: Book[] }>(
+      `https://boroughbooks.onrender.com/api/users/${username}/my-library/${isbn}`,
+    );
+    return response.data.usersBookByIsbn || [];
+  } catch (error) {
+    console.error("Error fetching book", error);
+    return [];
+  }
+}
+
+// Post book to book table
+
 export async function postBookFunction(
-  postedBookBody: PostedBookBody,
+  postedBookBody: Book,
 ): Promise<{ status: 201 }> {
   try {
     const response = await axios.post<{ status: 201 }>(
@@ -84,6 +83,48 @@ export async function postBookFunction(
     return response.data;
   } catch (error) {
     console.error("Error posting book:", error);
+    throw error;
+  }
+}
+
+// Post Book to users_book table
+
+export async function postUsersBookFunction(
+  username: string,
+  postedBookBody: Book,
+): Promise<{ status: 201 }> {
+  try {
+    const response = await axios.post<{ status: 201 }>(
+      `https://boroughbooks.onrender.com/api/users/${username}/my-library`,
+      postedBookBody,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error posting book:", error);
+    throw error;
+  }
+}
+
+// Handle Add Book
+
+export async function handleAddBook(
+  username: string,
+  bookData: Book,
+): Promise<Book | undefined> {
+  try {
+    const existingBook = await getBookById(bookData.isbn);
+    if (existingBook.length < 1) {
+      await postBookFunction(bookData);
+    }
+
+    const checkUsersBooks = await usersBookByIsbn(username, bookData.isbn);
+    if (checkUsersBooks.length < 1) {
+      await postUsersBookFunction(username, bookData);
+    }
+
+    return bookData;
+  } catch (error) {
+    console.error("Error searching book", error);
     throw error;
   }
 }
