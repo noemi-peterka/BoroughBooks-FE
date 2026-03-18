@@ -59,3 +59,7 @@ Just checking
 ## Using google API key to query the google database.
 
 Please make another .env file with the following inside:
+EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY=["YOUR GOOGLE API KEY HERE]
+
+This works in conjunction with out add-book.tsk file on line 172:
+const GOOGLE_BOOKS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY;
