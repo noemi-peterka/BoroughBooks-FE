@@ -87,6 +87,13 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="friendslibrary"
+        options={{
+          title: "Friends Library",
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
