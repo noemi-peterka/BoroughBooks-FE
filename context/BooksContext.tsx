@@ -111,7 +111,10 @@ export function BooksProvider({ children }: PropsWithChildren) {
   }, [user?.username]);
 
   const books = [
-    [...libraryBooks, ...wishlistBooks, ...borrowedBooks, ...lentBooks],
+    ...libraryBooks,
+    ...wishlistBooks,
+    ...borrowedBooks,
+    ...lentBooks,
   ];
 
   const addBook = (collection: CollectionType, book: Book) => {

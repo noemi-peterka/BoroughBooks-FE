@@ -1,14 +1,19 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Friend } from "@/utils/getData";
+import { useRouter } from "expo-router";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 export const FriendCard = ({
   relating_username,
   friend_profile_pic_url,
   friend_status,
 }: Friend) => {
+  const router = useRouter();
+
   return (
     <Pressable
-      // onPress={() => onPress?.(id)}
+      onPress={() =>
+        router.push(`/friendslibrary?username=${relating_username}`)
+      }
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <Image source={{ uri: friend_profile_pic_url }} style={styles.avatar} />
