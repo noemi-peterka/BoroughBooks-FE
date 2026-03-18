@@ -4,7 +4,7 @@
     "slug": "BoroughBooksFE",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/borough-books-logo.jpg",
+    "icon": "./assets/images/borough-books-logo.png",
     "scheme": "boroughbooksfe",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
