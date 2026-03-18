@@ -110,7 +110,7 @@ export async function postUsersBookFunction(
 export async function handleAddBook(
   username: string,
   bookData: Book,
-): Promise<Book | undefined> {
+): Promise<{ success: boolean; alreadyExists: boolean }> {
   try {
     const existingBook = await getBookById(bookData.isbn);
     if (existingBook.length < 1) {
@@ -118,13 +118,14 @@ export async function handleAddBook(
     }
 
     const checkUsersBooks = await usersBookByIsbn(username, bookData.isbn);
-    if (checkUsersBooks.length < 1) {
-      await postUsersBookFunction(username, bookData);
-    }
 
-    return bookData;
+    if (checkUsersBooks.length > 0) {
+      return { success: true, alreadyExists: true };
+    }
+    await postUsersBookFunction(username, bookData);
+    return { success: true, alreadyExists: false };
   } catch (error) {
-    console.error("Error searching book", error);
-    throw error;
+    console.error("Error adding book:", error);
+    return { success: false, alreadyExists: false };
   }
 }
