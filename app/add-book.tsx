@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSession } from "@/context/UserContext";
 
 import {
@@ -72,6 +72,8 @@ export default function AddBookScreen() {
   const [searchResults, setSearchResults] = useState<GoogleBookItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  const isScanningLocked = useRef(false);
+
   const screenTitle =
     targetCollection === "library"
       ? "Add Book to My Books"
@@ -102,6 +104,8 @@ export default function AddBookScreen() {
     setSearchResults([]);
     setShowCamera(false);
     setShowScanner(false);
+
+    isScanningLocked.current = false;
   };
 
   const autofillForm = (book: GoogleBookItem) => {
@@ -165,9 +169,12 @@ export default function AddBookScreen() {
   };
 
   const searchByISBN = async (isbn: string) => {
-    try {
-      setIsSearching(true);
+    if (isScanningLocked.current) return;
 
+    isScanningLocked.current = true;
+    setIsSearching(true);
+
+    try {
       const cleanISBN = isbn.replace(/[^0-9Xx]/g, "");
       const GOOGLE_BOOKS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY;
 
@@ -175,29 +182,26 @@ export default function AddBookScreen() {
         `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}&key=${GOOGLE_BOOKS_API_KEY}`,
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch ISBN result");
-      }
+      if (!response.ok) throw new Error("Failed to fetch ISBN result");
 
       const data = await response.json();
       const firstMatch = data.items?.[0];
 
       if (!firstMatch) {
-        Alert.alert(
-          "No match found",
-          `No Google Books result found for ISBN ${cleanISBN}.`,
-        );
+        Alert.alert("No match found", `No result for ISBN ${cleanISBN}.`);
+        isScanningLocked.current = false;
         return;
       }
 
       autofillForm(firstMatch);
-      Alert.alert("Book found", "Form auto-filled from barcode scan.");
+      setShowScanner(false);
+      Alert.alert("Book found", "Form auto-filled!");
     } catch (error) {
       console.error("ISBN search error:", error);
-      Alert.alert("Lookup failed", "Could not fetch book data from ISBN.");
+      Alert.alert("Lookup failed", "Could not fetch book data.");
+      isScanningLocked.current = false;
     } finally {
       setIsSearching(false);
-      setShowScanner(false);
     }
   };
 
@@ -314,7 +318,10 @@ export default function AddBookScreen() {
 
         <Pressable
           style={styles.scanButton}
-          onPress={() => setShowScanner(true)}
+          onPress={() => {
+            isScanningLocked.current = false;
+            setShowScanner(true);
+          }}
         >
           <Text style={styles.scanButtonText}>Scan Barcode</Text>
         </Pressable>
