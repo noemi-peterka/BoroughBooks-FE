@@ -229,14 +229,21 @@ export default function AddBookScreen() {
       description: description.trim(),
     };
 
-    const result = await handleAddBook(user.username, bookData);
+    const { success, alreadyExists } = await handleAddBook(
+      user.username,
+      bookData,
+    );
 
-    if (result) {
-      Alert.alert("Wow!", "Book added to your library >:-D ");
+    if (success) {
+      if (alreadyExists) {
+        Alert.alert("Oops!", "This book is already in your library :-)");
+      } else {
+        Alert.alert("Wow!", "Book added to your library >:-D ");
+      }
       resetForm();
       router.back();
     } else {
-      Alert.alert("Error", "Failed to add book. Please try again.");
+      Alert.alert("Ouch!", "Failed to add book. Please try again. :-( ");
     }
   };
 
