@@ -20,8 +20,6 @@ export async function getFriendsByUsername(
     const response = await axios.get<Friend[]>(
       `https://boroughbooks.onrender.com/api/users/${username}/friends`,
     );
-
-    // console.log(response.data.usersFriends);
     //@ts-ignore.   // we just want the array
     return response.data.usersFriends;
   } catch (error) {
@@ -30,10 +28,7 @@ export async function getFriendsByUsername(
   }
 }
 
-// To test uncomment below:
-// getFriendsByUsername("coolSurferDude");
-
-// Get book by book id
+// Get book from books table by book id
 
 export type Book = {
   isbn: string;
@@ -47,40 +42,33 @@ export type Book = {
 
 export async function getBookById(isbn: string): Promise<Book[]> {
   try {
-    const response = await axios.get<Book[]>(
+    const response = await axios.get<{ book: Book[] }>(
       `https://boroughbooks.onrender.com/api/books/${isbn}`,
     );
     console.log(response.data);
-    return response.data;
+    return response.data.book || [];
   } catch (error) {
     console.error("Error fetching book", error);
     return [];
   }
 }
 
-// To test uncomment below and use npx tsx utils/getData.ts:
-// getBookById("9781911547860");
+//Get users book by username and book id
 
-//Get users book by book id
-
-export async function usersBookById(
+export async function usersBookByIsbn(
   username: string,
   isbn: string,
 ): Promise<Book[]> {
   try {
-    const response = await axios.get<Book[]>(
+    const response = await axios.get<{ usersBookByIsbn: Book[] }>(
       `https://boroughbooks.onrender.com/api/users/${username}/my-library/${isbn}`,
     );
-    console.log(response.data);
-    return response.data;
+    return response.data.usersBookByIsbn || [];
   } catch (error) {
     console.error("Error fetching book", error);
     return [];
   }
 }
-
-// To test uncomment below and use npx tsx utils/getData.ts:
-// getBookById("9781911547860");
 
 // Post book to book table
 
@@ -129,7 +117,7 @@ export async function handleAddBook(
       await postBookFunction(bookData);
     }
 
-    const checkUsersBooks = await usersBookById(username, bookData.isbn);
+    const checkUsersBooks = await usersBookByIsbn(username, bookData.isbn);
     if (checkUsersBooks.length < 1) {
       await postUsersBookFunction(username, bookData);
     }

@@ -27,6 +27,7 @@ type GoogleBookItem = {
     title?: string;
     authors?: string[];
     categories?: string[];
+    publisher?: string;
     publishedDate?: string;
     description?: string;
     imageLinks?: {
@@ -63,10 +64,10 @@ export default function AddBookScreen() {
   const [isbn, setIsbn] = useState("");
   const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState("");
+  const [publisher, setPublisher] = useState("");
   const [publishedDate, setPublishedDate] = useState("");
   const [cover, setCover] = useState("");
   const [description, setDescription] = useState("");
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<GoogleBookItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -110,7 +111,14 @@ export default function AddBookScreen() {
 
     setTitle(info.title || "");
     setAuthor(info.authors?.join(", ") || "");
-    setIsbn(info.isbn?.join(", ") || ""); ///
+    const isbn13 = info.industryIdentifiers?.find(
+      (id) => id.type === "ISBN_13",
+    )?.identifier;
+    const isbn10 = info.industryIdentifiers?.find(
+      (id) => id.type === "ISBN_10",
+    )?.identifier;
+    setIsbn(isbn13 || isbn10 || "");
+    setPublisher(info.publisher || "Unknown Publisher");
     setGenre(info.categories?.[0] || "");
     setDescription(info.description || "");
     setCover(
@@ -161,11 +169,10 @@ export default function AddBookScreen() {
       setIsSearching(true);
 
       const cleanISBN = isbn.replace(/[^0-9Xx]/g, "");
+      const GOOGLE_BOOKS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY;
 
       const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(
-          cleanISBN,
-        )}`,
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}&key=${GOOGLE_BOOKS_API_KEY}`,
       );
 
       if (!response.ok) {
@@ -204,16 +211,20 @@ export default function AddBookScreen() {
     }
 
     if (!user?.username) {
-      Alert.alert("Error", "Please logged in to add books.");
+      Alert.alert("Error", "Please log in to add books.");
       return;
     }
+
+    const formattedDate = publishedDate.trim()
+      ? `${publishedDate.trim()}-01-01`
+      : `${new Date().getFullYear()}-01-01`;
+
     const bookData: Book = {
       title: title.trim(),
       authors: author.trim(),
       isbn: isbn.trim(),
-      publisher: "",
-      published_date:
-        publishedDate.trim() || new Date().getFullYear().toString(),
+      publisher: publisher.trim() || "Unknown Publisher",
+      published_date: formattedDate,
       imagelinks: cover.trim(),
       description: description.trim(),
     };
@@ -221,25 +232,13 @@ export default function AddBookScreen() {
     const result = await handleAddBook(user.username, bookData);
 
     if (result) {
+      Alert.alert("Wow!", "Book added to your library >:-D ");
       resetForm();
       router.back();
     } else {
-      Alert.alert("Error", "Failed to add book.");
+      Alert.alert("Error", "Failed to add book. Please try again.");
     }
   };
-
-  //   addBook(targetCollection, {
-  //     title: title.trim(),
-  //     authors: author.trim(),
-  //     isbn: isbn.trim(),
-  //     published_date: Number(publishedDate) || new Date().getFullYear(),
-  //     imagelinks: cover.trim(),
-  //     description: description.trim() || "No description provided.",
-  //   });
-
-  //   resetForm();
-  //   router.back();
-  // };
 
   if (showCamera) {
     return (

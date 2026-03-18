@@ -55,3 +55,7 @@ Join our community of developers creating universal apps.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 
 Just checking
+
+## Using google API key to query the google database.
+
+Please make another .env file with the following inside:
