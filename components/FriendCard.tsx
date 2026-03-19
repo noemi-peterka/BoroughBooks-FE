@@ -12,11 +12,18 @@ export const FriendCard = ({
   return (
     <Pressable
       onPress={() =>
-        router.push(`/friendslibrary?username=${relating_username}`)
+        router.push(
+          `/friendslibrary?username=${relating_username}&profilepic=${encodeURIComponent(friend_profile_pic_url ?? "")}`,
+        )
       }
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <Image source={{ uri: friend_profile_pic_url }} style={styles.avatar} />
+      <Image
+        source={
+          friend_profile_pic_url ? { uri: friend_profile_pic_url } : undefined
+        }
+        style={styles.avatar}
+      />
 
       <View style={styles.textContainer}>
         <Text style={styles.name}>{relating_username}</Text>
