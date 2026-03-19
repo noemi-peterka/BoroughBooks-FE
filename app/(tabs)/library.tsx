@@ -103,6 +103,7 @@ export default function Library() {
         showDelete
         onDelete={handleDeleteBook}
         layout="carousel"
+        collectionType="library"
       />
       {/* 
       <View style={styles.sectionHeader}>
@@ -129,6 +130,7 @@ export default function Library() {
         books={filteredLentBooks}
         isLoading={isLoading}
         layout="carousel"
+        collectionType="lent"
       />
 
       <View style={styles.sectionHeader}>
@@ -141,6 +143,7 @@ export default function Library() {
         books={filteredBorrowedBooks}
         isLoading={isLoading}
         layout="carousel"
+        collectionType="borrowed"
       />
     </ScrollView>
   );

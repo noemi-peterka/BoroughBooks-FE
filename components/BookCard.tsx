@@ -20,6 +20,7 @@ type BookCardProps = {
   onRequest?: (book: Book) => void;
   onDelete?: (book: Book) => void;
   onSwap?: (book: Book) => void;
+  collectionType?: "library" | "wishlist" | "borrowed" | "lent";
 };
 
 export default function BookCard({
@@ -30,6 +31,7 @@ export default function BookCard({
   onRequest,
   onDelete,
   onSwap,
+  collectionType,
 }: BookCardProps) {
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -54,12 +56,42 @@ export default function BookCard({
     <>
       <Pressable style={styles.card} onPress={() => setModalVisible(true)}>
         {hasCover ? (
-          <Image source={{ uri: book.imagelinks }} style={styles.image} />
+          <View style={styles.imageWrapper}>
+            <Image source={{ uri: book.imagelinks }} style={styles.image} />
+
+            {collectionType === "borrowed" && book.username && (
+              <View style={styles.lenderOverlay}>
+                <Text style={styles.lenderText}>Loaned by:</Text>
+                <Text style={styles.lenderUsername}>{book.username}</Text>
+              </View>
+            )}
+
+            {collectionType === "lent" && book.borrower_id && (
+              <View style={styles.lenderOverlay}>
+                <Text style={styles.lenderText}>Borrowed by:</Text>
+                <Text style={styles.lenderUsername}>{book.borrower_id}</Text>
+              </View>
+            )}
+          </View>
         ) : (
           <View style={[styles.image, styles.fallbackCover]}>
             <Text style={styles.fallbackTitle} numberOfLines={4}>
               {book.title}
             </Text>
+
+            {collectionType === "borrowed" && book.username && (
+              <View style={styles.lenderOverlay}>
+                <Text style={styles.lenderText}>Loaned by:</Text>
+                <Text style={styles.lenderUsername}>{book.username}</Text>
+              </View>
+            )}
+
+            {collectionType === "lent" && book.borrower_id && (
+              <View style={styles.lenderOverlay}>
+                <Text style={styles.lenderText}>Borrowed by:</Text>
+                <Text style={styles.lenderUsername}>{book.borrower_id}</Text>
+              </View>
+            )}
           </View>
         )}
       </Pressable>
@@ -146,7 +178,36 @@ const styles = StyleSheet.create({
     height: 220,
     borderRadius: 8,
   },
+  imageWrapper: {
+    width: "100%",
+    height: 220,
+    position: "relative",
+  },
 
+  lenderOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(128, 128, 128, 0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+  },
+
+  lenderText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+
+  lenderUsername: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
   fallbackCover: {
     backgroundColor: "#4a4a4a",
     justifyContent: "center",

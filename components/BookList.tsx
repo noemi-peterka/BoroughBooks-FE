@@ -24,6 +24,8 @@ type BookListProps = {
   onDelete?: (book: Book) => void;
   onSwap?: (book: Book) => void;
   addToCollection?: "library" | "wishlist" | "borrowed" | "lent";
+  collectionType?: "library" | "wishlist" | "borrowed" | "lent";
+
   showAddTile?: boolean;
   layout?: "grid" | "carousel";
 };
@@ -38,6 +40,7 @@ export default function BookList({
   onDelete,
   onSwap,
   showAddTile = false,
+  collectionType,
   layout = "grid",
 }: BookListProps) {
   const router = useRouter();
@@ -94,6 +97,7 @@ export default function BookList({
           onRequest={onRequest}
           onDelete={onDelete}
           onSwap={onSwap}
+          collectionType={collectionType}
         />
       </View>
     );
