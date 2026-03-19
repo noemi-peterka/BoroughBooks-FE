@@ -148,6 +148,8 @@ export function BooksProvider({ children }: PropsWithChildren) {
     }
 
     if (collection === "wishlist") {
+      if (!user) return;
+      await deleteBookFromUserProfile(user?.username, isbn, collection);
       setWishlistBooks((currentBooks) =>
         currentBooks.filter((book) => book.isbn !== isbn),
       );
