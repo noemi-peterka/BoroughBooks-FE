@@ -61,21 +61,38 @@ export default function ConversationListScreen() {
 
     try {
       setLoading(true);
-
       const response = await fetch(
         `${BACKEND_URL}/api/conversations/${currentUsername}`,
       );
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Failed to load conversations: ${text}`);
-      }
+      if (!response.ok) throw new Error("Failed to load");
 
       const data = await response.json();
-      setConversations(data.conversations || []);
+      const allConversations = data.conversations || [];
+
+      const conversationsWithMessages = await Promise.all(
+        allConversations.map(async (conv: Conversation) => {
+          try {
+            const msgResponse = await fetch(
+              `${BACKEND_URL}/api/conversations/${conv.conversation_id}/messages`,
+            );
+            const msgData = await msgResponse.json();
+            return msgData.messages && msgData.messages.length > 0
+              ? conv
+              : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      const filtered = conversationsWithMessages.filter(
+        (conv) => conv !== null,
+      ) as Conversation[];
+
+      setConversations(filtered);
     } catch (error: any) {
-      console.error("Error loading conversations:", error);
-      Alert.alert("Error", error?.message || "Failed to load conversations.");
+      console.error(error);
     } finally {
       setLoading(false);
     }

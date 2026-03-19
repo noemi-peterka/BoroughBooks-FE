@@ -230,7 +230,7 @@ export default function MessagesScreen() {
     >
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => router.push("/(tabs)/chat")}
           style={styles.backButton}
         >
           <Text style={styles.backText}>‹ Back</Text>
