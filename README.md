@@ -30,21 +30,22 @@ const GOOGLE_BOOKS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY;
 ## To set up messaging on Front end.
 
 To set up messaging on front end first please ensure you've installed the express cors dependencies. If unsure run the
-following command.
+following commands.
 
 npm install express cors @supabase/supabase-js dotenv
+npm install @supabase/supabase-js
 
 To set up messaging you will be required to get your supabase ANON public key and SERVICE key.
 To find these go to your supabase project dashboard from there click on "project settings"(appears with cog/gear icon).
 From there head to API keys and click on the "Legacy anon, service_role API keys" tab to see your ANON and SERVICE key.
 
-Next you need to update and add to your .env file with your supabase SERVICE_KEY
+Next you need to update and add to your .env file with your supabase ANON_KEY.
+
 Note: You don't need quotes for these values.
 
 ```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your-service-role-key-here
-PORT=3001
+EXPO_PUBLIC_SUPABASE_ANON_KEY=[Add ANON key here]
+EXPO_PUBLIC_SUPABASE_URL=[Add your supabase url here]
 ```
 
 After this head back to your supabase project dashboard and on the lefthand menu enter database and select "Publications"
