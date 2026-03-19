@@ -1,4 +1,13 @@
+import { useBooks } from "@/context/BooksContext";
 import { useSession } from "@/context/UserContext";
+import {
+  buildBorrowApprovedMessage,
+  buildBorrowDeclinedMessage,
+  parseBorrowApprovedMessage,
+  parseBorrowDeclinedMessage,
+  parseBorrowRequestMessage,
+} from "@/utils/borrowRequest";
+import { createLoan } from "@/utils/createLoan";
 import { supabase } from "@/utils/supabase";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -7,6 +16,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -31,27 +41,21 @@ export default function MessagesScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const { user, isLoading: sessionLoading } = useSession();
+  const { refetchBooks } = useBooks();
 
   const currentUsername = user?.username;
   const conversationId = Number(params.conversationId);
   const otherUsername = (params.otherUsername as string) || "Chat";
 
-  const prefillText = (params.prefillText as string) || "";
-  const requestBookTitle = (params.requestBookTitle as string) || "";
-  const requestBookIsbn = (params.requestBookIsbn as string) || "";
-
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState(prefillText);
+  const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [processingRequestId, setProcessingRequestId] = useState<number | null>(
+    null,
+  );
 
   const flatListRef = useRef<FlatList>(null);
-
-  useEffect(() => {
-    if (prefillText) {
-      setNewMessage(prefillText);
-    }
-  }, [prefillText]);
 
   useEffect(() => {
     if (!sessionLoading && currentUsername && conversationId) {
@@ -118,16 +122,19 @@ export default function MessagesScreen() {
     };
   }, [conversationId]);
 
-  const sendMessage = async () => {
+  const sendMessage = async (contentOverride?: string) => {
     if (!currentUsername) {
       Alert.alert("Error", "No logged in user found.");
       return;
     }
 
-    if (!newMessage.trim()) return;
+    const messageContent = (contentOverride ?? newMessage).trim();
+    if (!messageContent) return;
 
-    const messageContent = newMessage.trim();
-    setNewMessage("");
+    if (!contentOverride) {
+      setNewMessage("");
+    }
+
     setSending(true);
 
     try {
@@ -152,28 +159,281 @@ export default function MessagesScreen() {
     } catch (error: any) {
       console.error("Error sending message:", error);
       Alert.alert("Error", error?.message || "Failed to send message.");
-      setNewMessage(messageContent);
+
+      if (!contentOverride) {
+        setNewMessage(messageContent);
+      }
     } finally {
       setSending(false);
     }
   };
 
-  const handleApproveBorrow = () => {
-    Alert.alert(
-      "Coming soon",
-      "Approve borrow action will be connected to the backend soon.",
-    );
+  const hasRequestBeenResolved = (message: Message) => {
+    const request = parseBorrowRequestMessage(message.content);
+    if (!request) return false;
+
+    return messages.some((otherMessage) => {
+      const approved = parseBorrowApprovedMessage(otherMessage.content);
+      if (approved && approved.isbn === request.isbn) return true;
+
+      const declined = parseBorrowDeclinedMessage(otherMessage.content);
+      if (declined && declined.isbn === request.isbn) return true;
+
+      return false;
+    });
   };
 
-  const handleRejectBorrow = () => {
-    Alert.alert(
-      "Coming soon",
-      "Reject borrow action will be connected to the backend soon.",
-    );
+  const handleApproveBorrow = async (message: Message) => {
+    if (!currentUsername) {
+      Alert.alert("Error", "No logged in user found.");
+      return;
+    }
+
+    const request = parseBorrowRequestMessage(message.content);
+    if (!request) {
+      Alert.alert("Error", "This borrow request could not be read.");
+      return;
+    }
+
+    setProcessingRequestId(message.message_id);
+
+    try {
+      await createLoan(currentUsername, request.isbn, message.sender_username);
+
+      await sendMessage(
+        buildBorrowApprovedMessage({
+          isbn: request.isbn,
+          title: request.title,
+          imagelinks: request.imagelinks,
+        }),
+      );
+
+      await refetchBooks();
+
+      Alert.alert("Approved", `"${request.title}" has been loaned out.`);
+    } catch (error: any) {
+      console.error("Error approving borrow request:", error);
+      Alert.alert(
+        "Error",
+        error?.message || "Failed to approve borrow request.",
+      );
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  const handleRejectBorrow = async (message: Message) => {
+    const request = parseBorrowRequestMessage(message.content);
+    if (!request) {
+      Alert.alert("Error", "This borrow request could not be read.");
+      return;
+    }
+
+    setProcessingRequestId(message.message_id);
+
+    try {
+      await sendMessage(
+        buildBorrowDeclinedMessage({
+          isbn: request.isbn,
+          title: request.title,
+          imagelinks: request.imagelinks,
+        }),
+      );
+
+      Alert.alert("Declined", `Request for "${request.title}" was declined.`);
+    } catch (error: any) {
+      console.error("Error declining borrow request:", error);
+      Alert.alert(
+        "Error",
+        error?.message || "Failed to decline borrow request.",
+      );
+    } finally {
+      setProcessingRequestId(null);
+    }
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isMyMessage = item.sender_username === currentUsername;
+
+    const borrowRequest = parseBorrowRequestMessage(item.content);
+    const borrowApproved = parseBorrowApprovedMessage(item.content);
+    const borrowDeclined = parseBorrowDeclinedMessage(item.content);
+
+    if (borrowRequest) {
+      const isOwnerViewing = !isMyMessage;
+      const resolved = hasRequestBeenResolved(item);
+      const isProcessing = processingRequestId === item.message_id;
+
+      return (
+        <View
+          style={[
+            styles.messageContainer,
+            isMyMessage ? styles.myMessage : styles.otherMessage,
+          ]}
+        >
+          {!isMyMessage && (
+            <Text style={styles.senderName}>{item.sender_username}</Text>
+          )}
+
+          <View style={styles.requestCard}>
+            <Text style={styles.requestLabel}>Borrow request</Text>
+
+            {!!borrowRequest.imagelinks && (
+              <Image
+                source={{ uri: borrowRequest.imagelinks }}
+                style={styles.requestBookCover}
+                resizeMode="cover"
+              />
+            )}
+
+            <Text
+              style={[
+                styles.requestTitle,
+                isMyMessage ? styles.myMessageText : styles.otherMessageText,
+              ]}
+            >
+              {borrowRequest.title}
+            </Text>
+
+            {isOwnerViewing && !resolved && (
+              <View style={styles.requestActionRow}>
+                <TouchableOpacity
+                  style={styles.requestActionButton}
+                  onPress={() => handleApproveBorrow(item)}
+                  disabled={isProcessing}
+                >
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={24}
+                    color={isProcessing ? "#999" : "green"}
+                  />
+                  <Text style={styles.requestActionText}>Approve</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.requestActionButton}
+                  onPress={() => handleRejectBorrow(item)}
+                  disabled={isProcessing}
+                >
+                  <Ionicons
+                    name="close-circle"
+                    size={24}
+                    color={isProcessing ? "#999" : "red"}
+                  />
+                  <Text style={styles.requestActionText}>Decline</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {resolved && (
+              <Text
+                style={[
+                  styles.resolvedText,
+                  isMyMessage
+                    ? styles.myResolvedText
+                    : styles.otherResolvedText,
+                ]}
+              >
+                This request has been handled.
+              </Text>
+            )}
+          </View>
+
+          <Text style={styles.timestamp}>
+            {new Date(item.sent_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        </View>
+      );
+    }
+
+    if (borrowApproved) {
+      return (
+        <View
+          style={[
+            styles.messageContainer,
+            isMyMessage ? styles.myMessage : styles.otherMessage,
+          ]}
+        >
+          {!isMyMessage && (
+            <Text style={styles.senderName}>{item.sender_username}</Text>
+          )}
+
+          <View style={styles.requestCard}>
+            <Text style={styles.requestLabel}>Borrow approved</Text>
+
+            {!!borrowApproved.imagelinks && (
+              <Image
+                source={{ uri: borrowApproved.imagelinks }}
+                style={styles.requestBookCover}
+                resizeMode="cover"
+              />
+            )}
+
+            <Text
+              style={[
+                styles.messageText,
+                isMyMessage ? styles.myMessageText : styles.otherMessageText,
+              ]}
+            >
+              Approved: "{borrowApproved.title}" is ready to borrow.
+            </Text>
+          </View>
+
+          <Text style={styles.timestamp}>
+            {new Date(item.sent_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        </View>
+      );
+    }
+
+    if (borrowDeclined) {
+      return (
+        <View
+          style={[
+            styles.messageContainer,
+            isMyMessage ? styles.myMessage : styles.otherMessage,
+          ]}
+        >
+          {!isMyMessage && (
+            <Text style={styles.senderName}>{item.sender_username}</Text>
+          )}
+
+          <View style={styles.requestCard}>
+            <Text style={styles.requestLabel}>Borrow declined</Text>
+
+            {!!borrowDeclined.imagelinks && (
+              <Image
+                source={{ uri: borrowDeclined.imagelinks }}
+                style={styles.requestBookCover}
+                resizeMode="cover"
+              />
+            )}
+
+            <Text
+              style={[
+                styles.messageText,
+                isMyMessage ? styles.myMessageText : styles.otherMessageText,
+              ]}
+            >
+              Declined: "{borrowDeclined.title}" is not available right now.
+            </Text>
+          </View>
+
+          <Text style={styles.timestamp}>
+            {new Date(item.sent_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        </View>
+      );
+    }
 
     return (
       <View
@@ -239,34 +499,6 @@ export default function MessagesScreen() {
         <Text style={styles.headerTitle}>{otherUsername}</Text>
       </View>
 
-      {(requestBookTitle || requestBookIsbn) && (
-        <View style={styles.bookRequestBanner}>
-          <Text style={styles.bookRequestLabel}>Borrow request</Text>
-          <Text style={styles.bookRequestTitle}>{requestBookTitle}</Text>
-          {requestBookIsbn ? (
-            <Text style={styles.bookRequestMeta}>ISBN: {requestBookIsbn}</Text>
-          ) : null}
-
-          <View style={styles.requestActionRow}>
-            <TouchableOpacity
-              style={styles.requestActionButton}
-              onPress={handleApproveBorrow}
-            >
-              <Ionicons name="checkmark-circle" size={28} color="green" />
-              <Text style={styles.requestActionText}>Approve</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.requestActionButton}
-              onPress={handleRejectBorrow}
-            >
-              <Ionicons name="close-circle" size={28} color="red" />
-              <Text style={styles.requestActionText}>Decline</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -300,7 +532,7 @@ export default function MessagesScreen() {
             styles.sendButton,
             (!newMessage.trim() || sending) && styles.sendButtonDisabled,
           ]}
-          onPress={sendMessage}
+          onPress={() => sendMessage()}
           disabled={!newMessage.trim() || sending}
         >
           {sending ? (
@@ -351,46 +583,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#111",
   },
-  bookRequestBanner: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  bookRequestLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  bookRequestTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
-    marginBottom: 4,
-  },
-  bookRequestMeta: {
-    fontSize: 13,
-    color: "#666",
-    marginBottom: 12,
-  },
-  requestActionRow: {
-    flexDirection: "row",
-    gap: 24,
-    alignItems: "center",
-  },
-  requestActionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  requestActionText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111",
-  },
   messagesList: {
     padding: 16,
     flexGrow: 1,
@@ -432,6 +624,53 @@ const styles = StyleSheet.create({
     color: "#999",
     marginTop: 4,
     alignSelf: "flex-end",
+  },
+  requestCard: {
+    gap: 4,
+  },
+  requestLabel: {
+    fontSize: 12,
+    color: "#666",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  requestTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    lineHeight: 22,
+  },
+  requestBookCover: {
+    width: 90,
+    height: 130,
+    borderRadius: 8,
+    marginTop: 6,
+    marginBottom: 10,
+  },
+  requestActionRow: {
+    flexDirection: "row",
+    gap: 20,
+    marginTop: 8,
+  },
+  requestActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  requestActionText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111",
+  },
+  resolvedText: {
+    marginTop: 8,
+    fontSize: 13,
+    fontStyle: "italic",
+  },
+  myResolvedText: {
+    color: "#E5E7EB",
+  },
+  otherResolvedText: {
+    color: "#666",
   },
   emptyContainer: {
     flex: 1,
