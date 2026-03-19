@@ -105,7 +105,7 @@ export default function Library() {
         layout="carousel"
         collectionType="library"
       />
-
+      {/* 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Wishlist</Text>
         <Pressable onPress={() => router.push("/wishlist")}>
@@ -118,8 +118,7 @@ export default function Library() {
         showDelete
         onDelete={(book) => deleteBook("wishlist", book.isbn)}
         layout="carousel"
-        collectionType="wishlist"
-      />
+      /> */}
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Lent</Text>

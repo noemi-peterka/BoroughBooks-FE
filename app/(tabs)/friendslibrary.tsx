@@ -1,6 +1,7 @@
 import BookList from "@/components/BookList";
 import type { Book } from "@/context/BooksContext";
 import { useSession } from "@/context/UserContext";
+import { buildBorrowRequestMessage } from "@/utils/borrowRequest";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -20,10 +21,11 @@ export default function FriendsLibrary() {
   const router = useRouter();
   const { user } = useSession();
 
-  const friendUsername = username as string;
+  const friendUsername = Array.isArray(username) ? username[0] : username;
 
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingRequest, setIsSendingRequest] = useState(false);
 
   useEffect(() => {
     async function fetchFriendsBooks() {
@@ -32,7 +34,7 @@ export default function FriendsLibrary() {
       setIsLoading(true);
       try {
         const response = await axios.get<{ books: Book[] }>(
-          `${API_BASE_URL}/users/${friendUsername}/my-library`,
+          `${API_BASE_URL}/users/${encodeURIComponent(friendUsername)}/my-library`,
         );
         setBooks(response.data.books || []);
       } catch (error) {
@@ -51,7 +53,7 @@ export default function FriendsLibrary() {
     otherUsername: string,
   ) => {
     const response = await fetch(
-      `${API_BASE_URL}/conversations/${currentUsername}`,
+      `${API_BASE_URL}/conversations/${encodeURIComponent(currentUsername)}`,
     );
 
     if (!response.ok) {
@@ -96,11 +98,51 @@ export default function FriendsLibrary() {
     return data.conversation as Conversation;
   };
 
+  const sendBorrowRequestMessage = async (
+    conversationId: number,
+    senderUsername: string,
+    book: Book,
+  ) => {
+    const content = buildBorrowRequestMessage({
+      isbn: book.isbn,
+      title: book.title,
+      imagelinks: book.imagelinks,
+    });
+
+    const response = await fetch(`${API_BASE_URL}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        sender_username: senderUsername,
+        content,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Failed to send borrow request: ${text}`);
+    }
+
+    return response.json();
+  };
+
   const handleRequestBook = async (book: Book) => {
     if (!user?.username) {
       Alert.alert("Error", "No logged in user found.");
       return;
     }
+
+    if (!friendUsername) {
+      Alert.alert("Error", "Could not find this friend's username.");
+      return;
+    }
+
+    if (isSendingRequest) return;
+
+    setIsSendingRequest(true);
 
     try {
       const existingConversation = await findExistingConversation(
@@ -112,29 +154,34 @@ export default function FriendsLibrary() {
         existingConversation ??
         (await createConversation(user.username, friendUsername));
 
+      await sendBorrowRequestMessage(
+        conversation.conversation_id,
+        user.username,
+        book,
+      );
+
       router.push({
         pathname: "/messages",
         params: {
           conversationId: String(conversation.conversation_id),
           otherUsername: friendUsername,
-          prefillText: `Can I borrow "${book.title}"?`,
-          requestBookTitle: book.title,
-          requestBookIsbn: book.isbn,
         },
       });
     } catch (error: any) {
-      console.error("Failed to start borrow chat:", error);
+      console.error("Failed to start borrow request:", error);
       Alert.alert(
         "Error",
-        error?.message || "Could not open chat for this book.",
+        error?.message || "Could not send borrow request for this book.",
       );
+    } finally {
+      setIsSendingRequest(false);
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{friendUsername}'s Library</Text>
+        <Text style={styles.title}>{friendUsername}&apos;s Library</Text>
       </View>
 
       <View style={styles.sectionHeader}>

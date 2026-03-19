@@ -1,7 +1,7 @@
+import { useSession } from "@/context/UserContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState, useRef } from "react";
-import { useSession } from "@/context/UserContext";
+import { useRef, useState } from "react";
 
 import {
   Alert,
@@ -42,7 +42,7 @@ type GoogleBookItem = {
 };
 
 export default function AddBookScreen() {
-  const { addBook } = useBooks();
+  const { addBook, refetchBooks } = useBooks();
   const { user } = useSession();
 
   const params = useLocalSearchParams<{ collection?: string }>();
@@ -243,6 +243,9 @@ export default function AddBookScreen() {
         Alert.alert("Oops!", "This book is already in your library :-)");
       } else {
         Alert.alert("Wow!", "Book added to your library >:-D ");
+        console.log("save succeeded, calling refetchbooks...");
+        await refetchBooks();
+        console.log("refetch done");
       }
       resetForm();
       router.back();

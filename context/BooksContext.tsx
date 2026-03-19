@@ -95,10 +95,12 @@ export function BooksProvider({ children }: PropsWithChildren) {
         ),
       ]);
 
-      setLibraryBooks(libraryResponse.data.books || []);
-      setLentBooks(loansResponse.data.books || []);
-      setBorrowedBooks(borrowingResponse.data.books || []);
-      setWishlistBooks(wishListResponse.data.usersWishList || []);
+      setLibraryBooks([...libraryResponse.data.books].reverse() || []);
+      setLentBooks([...loansResponse.data.books].reverse() || []);
+      setBorrowedBooks([...borrowingResponse.data.books].reverse() || []);
+      setWishlistBooks(
+        [...wishListResponse.data.usersWishList].reverse() || [],
+      );
     } catch (error) {
       console.error("Failed to fetch user books:", error);
       clearAllBooks();
