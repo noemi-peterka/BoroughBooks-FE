@@ -46,7 +46,6 @@ export default function ConversationListScreen() {
 
     try {
       const friendsList = await getFriendsByUsername(currentUsername);
-      // Filter to only accepted friends
       const acceptedFriends = friendsList.filter(
         (friend) => friend.friend_status === "accepted",
       );
@@ -180,6 +179,21 @@ export default function ConversationListScreen() {
       : conversation.user1_username;
   };
 
+  const getConversationProfilePic = (conversation: Conversation) => {
+    const otherUsername = getOtherUsername(conversation);
+
+    const friend = friends.find((f) => {
+      const friendUsername = getFriendUsername(f);
+      return friendUsername === otherUsername;
+    });
+
+    if (friend) {
+      return getFriendProfilePic(friend);
+    }
+
+    return null;
+  };
+
   const openChat = (conversationId: number, otherUsername: string) => {
     router.push({
       pathname: "/messages",
@@ -210,17 +224,25 @@ export default function ConversationListScreen() {
 
   const renderConversation = ({ item }: { item: Conversation }) => {
     const otherUsername = getOtherUsername(item);
+    const profilePic = getConversationProfilePic(item);
 
     return (
       <TouchableOpacity
         style={styles.conversationItem}
         onPress={() => openChat(item.conversation_id, otherUsername)}
       >
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {otherUsername.charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        {profilePic ? (
+          <Image
+            source={{ uri: profilePic }}
+            style={styles.conversationAvatar}
+          />
+        ) : (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {otherUsername.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.conversationInfo}>
           <Text style={styles.username}>{otherUsername}</Text>
@@ -259,7 +281,6 @@ export default function ConversationListScreen() {
         </Text>
       </View>
 
-      {/* Friends List Section */}
       {friends.length > 0 && (
         <View style={styles.friendsSection}>
           <Text style={styles.sectionTitle}>Start a chat with friends</Text>
@@ -366,6 +387,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+  },
+  conversationAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#D9D9D9",
+    marginRight: 12,
   },
   avatar: {
     width: 50,
