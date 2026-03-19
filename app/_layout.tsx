@@ -28,7 +28,7 @@ export default function RootLayout() {
             }}
           />
           <Drawer.Screen
-            name="(tabs)/sign-in"
+            name="sign-in"
             options={{
               title: "Sign in",
             }}
