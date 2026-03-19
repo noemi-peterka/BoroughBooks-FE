@@ -111,7 +111,7 @@ export default function BookCard({
                 {showRequest && (
                   <Pressable onPress={handleRequest}>
                     <Ionicons
-                      name="arrow-redo-outline"
+                      name="chatbubble-ellipses-outline"
                       size={28}
                       color="black"
                     />
