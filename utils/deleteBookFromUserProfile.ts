@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export async function deleteBookFromUserLibrary(
+export async function deleteBookFromUserProfile(
   username: string,
   isbn: string,
   collection: string,
