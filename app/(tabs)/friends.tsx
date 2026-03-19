@@ -19,7 +19,10 @@ export default function FriendsScreen() {
     const fetchFriends = async () => {
       if (user) {
         const friendsList = await getFriendsByUsername(user.username);
-        setFriends(friendsList);
+        const acceptedFriends = friendsList.filter(
+          (friend) => friend.friend_status === "accepted",
+        );
+        setFriends(acceptedFriends);
       }
     };
 
