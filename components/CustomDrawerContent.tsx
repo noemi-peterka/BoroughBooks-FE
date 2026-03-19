@@ -9,6 +9,11 @@ export default function CustomDrawerContent(props: any) {
         onPress={() => router.push("/(tabs)/library")}
       />
 
+      <DrawerItem
+        label="My Books"
+        onPress={() => router.push("/(tabs)/my-books")}
+      />
+
       <DrawerItem label="Add a book" onPress={() => router.push("/add-book")} />
 
       <DrawerItem
