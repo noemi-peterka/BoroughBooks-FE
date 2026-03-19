@@ -14,6 +14,7 @@ export type CollectionType = "library" | "wishlist" | "borrowed" | "lent";
 export type Book = {
   isbn: string;
   username?: string;
+  borrower_id?: string;
   title: string;
   authors: string;
   publisher?: string;

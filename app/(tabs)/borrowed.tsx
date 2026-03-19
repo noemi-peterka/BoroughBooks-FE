@@ -70,6 +70,7 @@ export default function BorrowedScreen() {
         showSwap
         onDelete={handleDeleteBook}
         onSwap={handleLendBook}
+        collectionType="borrowed"
       />
     </View>
   );
