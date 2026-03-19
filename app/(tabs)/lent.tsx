@@ -71,7 +71,6 @@ export default function LentScreen() {
         showSwap
         onDelete={handleDeleteBook}
         onSwap={handleLendBook}
-        showAddTile
       />
     </View>
   );
