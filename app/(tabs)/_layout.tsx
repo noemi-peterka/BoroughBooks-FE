@@ -73,6 +73,14 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="my-books"
+        options={{
+          title: "My Books",
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
         name="borrowed"
         options={{
           title: "Borrowed",
