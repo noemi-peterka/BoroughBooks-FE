@@ -88,6 +88,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="messages"
+        options={{
+          title: "Messages",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="friendslibrary"
         options={{
           title: "Friends Library",

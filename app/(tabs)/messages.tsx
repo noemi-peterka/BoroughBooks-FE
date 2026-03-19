@@ -1,20 +1,22 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useSession } from "@/context/UserContext"; // adjust path if needed
+import { supabase } from "@/utils/supabase";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  Alert,
+  View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { supabase } from "@/utils/supabase";
 
-// Types matching your backend response
+const BACKEND_URL = "https://boroughbooks.onrender.com";
+
 interface Message {
   message_id: number;
   conversation_id: number;
@@ -24,63 +26,54 @@ interface Message {
   read_at: string | null;
 }
 
-export default function ChatScreen() {
+export default function MessagesScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const { user, isLoading: sessionLoading } = useSession();
 
+  const currentUsername = user?.username;
   const conversationId = Number(params.conversationId);
-  const currentUsername = params.currentUsername as string;
   const otherUsername = params.otherUsername as string;
-  const backendUrl =
-    (params.backendUrl as string) || "https://boroughbooks.onrender.com"; // CHANGE THIS!
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const channelRef = useRef<any>(null);
+
   const flatListRef = useRef<FlatList>(null);
 
-  // Debug: Log the backend URL
   useEffect(() => {
-    console.log("🔗 Backend URL:", backendUrl);
-    console.log("💬 Conversation ID:", conversationId);
-    console.log("👤 Current User:", currentUsername);
-  }, []);
-
-  // Load initial messages
-  useEffect(() => {
-    loadMessages();
-  }, [conversationId]);
+    if (!sessionLoading && currentUsername && conversationId) {
+      loadMessages();
+    }
+  }, [sessionLoading, currentUsername, conversationId]);
 
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const url = `${backendUrl}/api/messages?conversation_id=${conversationId}`;
-      console.log("📥 Fetching messages from:", url);
 
-      const response = await fetch(url);
+      const response = await fetch(
+        `${BACKEND_URL}/api/conversations/${conversationId}/messages`,
+      );
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const text = await response.text();
+        throw new Error(`Failed to load messages: ${text}`);
       }
 
       const data = await response.json();
-      console.log("✅ Messages loaded:", data.messages?.length || 0);
       setMessages(data.messages || []);
-    } catch (error) {
-      console.error("❌ Error loading messages:", error);
-      Alert.alert(
-        "Connection Error",
-        `Can't reach backend at ${backendUrl}\n\nError: ${error.message}\n\nMake sure:\n1. Backend is running\n2. Use correct IP (not localhost)\n3. Check network connection`,
-      );
+    } catch (error: any) {
+      console.error("Error loading messages:", error);
+      Alert.alert("Error", error?.message || "Failed to load messages.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Subscribe to Realtime
   useEffect(() => {
+    if (!conversationId) return;
+
     const channel = supabase
       .channel(`conversation-${conversationId}`)
       .on(
@@ -92,8 +85,17 @@ export default function ChatScreen() {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          console.log("🔔 New message via Realtime:", payload.new);
-          setMessages((prev) => [...prev, payload.new as Message]);
+          const incomingMessage = payload.new as Message;
+
+          setMessages((prev) => {
+            const alreadyExists = prev.some(
+              (msg) => msg.message_id === incomingMessage.message_id,
+            );
+
+            if (alreadyExists) return prev;
+            return [...prev, incomingMessage];
+          });
+
           setTimeout(() => {
             flatListRef.current?.scrollToEnd({ animated: true });
           }, 100);
@@ -101,17 +103,17 @@ export default function ChatScreen() {
       )
       .subscribe();
 
-    channelRef.current = channel;
-
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
+      supabase.removeChannel(channel);
     };
   }, [conversationId]);
 
-  // Send message
   const sendMessage = async () => {
+    if (!currentUsername) {
+      Alert.alert("Error", "No logged in user found.");
+      return;
+    }
+
     if (!newMessage.trim()) return;
 
     const messageContent = newMessage.trim();
@@ -119,37 +121,27 @@ export default function ChatScreen() {
     setSending(true);
 
     try {
-      const url = `${backendUrl}/api/messages`;
-      console.log("📤 Sending message to:", url);
-
-      const body = {
-        conversation_id: conversationId,
-        sender_username: currentUsername,
-        content: messageContent,
-      };
-      console.log("📦 Request body:", body);
-
-      const response = await fetch(url, {
+      const response = await fetch(`${BACKEND_URL}/api/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          sender_username: currentUsername,
+          content: messageContent,
+        }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        const text = await response.text();
+        throw new Error(`Failed to send message: ${text}`);
       }
 
-      const data = await response.json();
-      console.log("✅ Message sent:", data.message);
-    } catch (error) {
-      console.error("❌ Error sending message:", error);
-      Alert.alert(
-        "Send Failed",
-        `Couldn't send message.\n\nError: ${error.message}\n\nBackend URL: ${backendUrl}`,
-      );
+      await response.json();
+    } catch (error: any) {
+      console.error("Error sending message:", error);
+      Alert.alert("Error", error?.message || "Failed to send message.");
       setNewMessage(messageContent);
     } finally {
       setSending(false);
@@ -169,6 +161,7 @@ export default function ChatScreen() {
         {!isMyMessage && (
           <Text style={styles.senderName}>{item.sender_username}</Text>
         )}
+
         <Text
           style={[
             styles.messageText,
@@ -177,6 +170,7 @@ export default function ChatScreen() {
         >
           {item.content}
         </Text>
+
         <Text style={styles.timestamp}>
           {new Date(item.sent_at).toLocaleTimeString([], {
             hour: "2-digit",
@@ -187,12 +181,19 @@ export default function ChatScreen() {
     );
   };
 
-  if (loading) {
+  if (sessionLoading || loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Loading messages...</Text>
-        <Text style={styles.debugText}>Backend: {backendUrl}</Text>
+      </View>
+    );
+  }
+
+  if (!currentUsername) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>No user session found.</Text>
       </View>
     );
   }
@@ -203,7 +204,6 @@ export default function ChatScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={90}
     >
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -211,10 +211,10 @@ export default function ChatScreen() {
         >
           <Text style={styles.backText}>‹ Back</Text>
         </TouchableOpacity>
+
         <Text style={styles.headerTitle}>{otherUsername}</Text>
       </View>
 
-      {/* Messages List */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -231,7 +231,6 @@ export default function ChatScreen() {
         }
       />
 
-      {/* Input Area */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -243,6 +242,7 @@ export default function ChatScreen() {
           maxLength={500}
           editable={!sending}
         />
+
         <TouchableOpacity
           style={[
             styles.sendButton,
@@ -277,11 +277,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: "#666",
-  },
-  debugText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: "#999",
   },
   header: {
     backgroundColor: "#fff",

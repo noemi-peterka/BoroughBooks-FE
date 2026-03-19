@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  TextInput,
-} from "react-native";
+import { useSession } from "@/context/UserContext";
 import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const BACKEND_URL = "https://boroughbooks.onrender.com";
 
 interface Conversation {
   conversation_id: number;
@@ -17,109 +20,121 @@ interface Conversation {
   created_at: string;
 }
 
-interface ConversationListProps {
-  currentUsername: string;
-  backendUrl: string;
-}
+export default function ConversationListScreen() {
+  const router = useRouter();
+  const { user, isLoading: sessionLoading } = useSession();
 
-export default function ConversationListScreen({
-  currentUsername,
-  backendUrl,
-}: ConversationListProps) {
+  const currentUsername = user?.username;
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [newChatUsername, setNewChatUsername] = useState("");
   const [creating, setCreating] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
-    loadConversations();
-  }, []);
+    if (!sessionLoading && currentUsername) {
+      loadConversations();
+    }
+  }, [sessionLoading, currentUsername]);
 
   const loadConversations = async () => {
+    if (!currentUsername) return;
+
     try {
       setLoading(true);
+
       const response = await fetch(
-        `https://boroughbooks.onrender.com/api/conversations?username=${currentUsername}`,
+        `${BACKEND_URL}/api/conversations/${currentUsername}`,
       );
 
       if (!response.ok) {
-        throw new Error("Failed to load conversations");
+        const text = await response.text();
+        throw new Error(`Failed to load conversations: ${text}`);
       }
 
       const data = await response.json();
       setConversations(data.conversations || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading conversations:", error);
-      alert("Failed to load conversations. Check your backend URL.");
+      Alert.alert("Error", error?.message || "Failed to load conversations.");
     } finally {
       setLoading(false);
     }
   };
 
   const createNewConversation = async () => {
-    if (!newChatUsername.trim()) {
-      alert("Please enter a username");
+    if (!currentUsername) {
+      Alert.alert("Error", "No logged in user found.");
       return;
     }
 
-    if (newChatUsername.trim() === currentUsername) {
-      alert("You can't chat with yourself!");
+    const trimmedUsername = newChatUsername.trim();
+
+    if (!trimmedUsername) {
+      Alert.alert("Error", "Please enter a username.");
+      return;
+    }
+
+    if (trimmedUsername === currentUsername) {
+      Alert.alert("Error", "You can't chat with yourself.");
       return;
     }
 
     try {
       setCreating(true);
-      const response = await fetch(
-        `https://boroughbooks.onrender.com/api/conversations`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user1_username: currentUsername,
-            user2_username: newChatUsername.trim(),
-          }),
+
+      const response = await fetch(`${BACKEND_URL}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          user1_username: currentUsername,
+          user2_username: trimmedUsername,
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to create conversation");
+        const text = await response.text();
+        throw new Error(`Failed to create conversation: ${text}`);
       }
 
       const data = await response.json();
       const conversation = data.conversation;
 
-      // Navigate to chat screen
-      openChat(conversation.conversation_id, newChatUsername.trim());
-
       setNewChatUsername("");
-      loadConversations(); // Refresh list
-    } catch (error) {
+      await loadConversations();
+
+      router.push({
+        pathname: "/messages",
+        params: {
+          conversationId: String(conversation.conversation_id),
+          otherUsername: trimmedUsername,
+        },
+      });
+    } catch (error: any) {
       console.error("Error creating conversation:", error);
-      alert("Failed to start conversation. Make sure the user exists.");
+      Alert.alert("Error", error?.message || "Failed to start conversation.");
     } finally {
       setCreating(false);
     }
   };
 
-  const openChat = (conversationId: number, otherUsername: string) => {
-    router.push({
-      pathname: "/chat",
-      params: {
-        conversationId,
-        currentUsername,
-        otherUsername,
-        backendUrl,
-      },
-    });
+  const getOtherUsername = (conversation: Conversation) => {
+    if (!currentUsername) return "";
+    return conversation.user1_username === currentUsername
+      ? conversation.user2_username
+      : conversation.user1_username;
   };
 
-  const getOtherUsername = (conv: Conversation): string => {
-    return conv.user1_username === currentUsername
-      ? conv.user2_username
-      : conv.user1_username;
+  const openChat = (conversationId: number, otherUsername: string) => {
+    router.push({
+      pathname: "/messages",
+      params: {
+        conversationId: String(conversationId),
+        otherUsername,
+      },
+    });
   };
 
   const renderConversation = ({ item }: { item: Conversation }) => {
@@ -135,18 +150,20 @@ export default function ConversationListScreen({
             {otherUsername.charAt(0).toUpperCase()}
           </Text>
         </View>
+
         <View style={styles.conversationInfo}>
           <Text style={styles.username}>{otherUsername}</Text>
           <Text style={styles.conversationDate}>
             Started {new Date(item.created_at).toLocaleDateString()}
           </Text>
         </View>
+
         <Text style={styles.arrow}>›</Text>
       </TouchableOpacity>
     );
   };
 
-  if (loading) {
+  if (sessionLoading || loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -155,19 +172,25 @@ export default function ConversationListScreen({
     );
   }
 
+  if (!currentUsername) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>No user session found.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
         <Text style={styles.headerSubtitle}>
           Logged in as {currentUsername}
         </Text>
       </View>
-
-      {/* New Chat Section */}
-      <View style={styles.newChatSection}>
+      {/* start */}
+      {/* <View style={styles.newChatSection}>
         <Text style={styles.sectionTitle}>Start New Chat</Text>
+
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
@@ -178,6 +201,7 @@ export default function ConversationListScreen({
             autoCapitalize="none"
             editable={!creating}
           />
+
           <TouchableOpacity
             style={[
               styles.createButton,
@@ -194,14 +218,15 @@ export default function ConversationListScreen({
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
 
-      {/* Conversations List */}
       <FlatList
         data={conversations}
         keyExtractor={(item) => item.conversation_id.toString()}
         renderItem={renderConversation}
         contentContainerStyle={styles.listContent}
+        refreshing={loading}
+        onRefresh={loadConversations}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
