@@ -93,7 +93,7 @@ export default function Library() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>My Books</Text>
-        <Pressable onPress={() => router.push("/collection/library")}>
+        <Pressable onPress={() => router.push("/library")}>
           <Text style={styles.seeAll}>See all</Text>
         </Pressable>
       </View>
@@ -107,7 +107,7 @@ export default function Library() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Wishlist</Text>
-        <Pressable onPress={() => router.push("/collection/wishlist")}>
+        <Pressable onPress={() => router.push("/wishlist")}>
           <Text style={styles.seeAll}>See all</Text>
         </Pressable>
       </View>
@@ -121,7 +121,7 @@ export default function Library() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Lent</Text>
-        <Pressable onPress={() => router.push("/collection/lent")}>
+        <Pressable onPress={() => router.push("/lent")}>
           <Text style={styles.seeAll}>See all</Text>
         </Pressable>
       </View>
@@ -133,7 +133,7 @@ export default function Library() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Borrowed</Text>
-        <Pressable onPress={() => router.push("/collection/borrowed")}>
+        <Pressable onPress={() => router.push("/borrowed")}>
           <Text style={styles.seeAll}>See all</Text>
         </Pressable>
       </View>
