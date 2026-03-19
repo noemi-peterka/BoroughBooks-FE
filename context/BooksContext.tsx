@@ -1,3 +1,4 @@
+import { deleteBookFromUserProfile } from "@/utils/deleteBookFromUserProfile";
 import axios from "axios";
 import {
   createContext,
@@ -7,7 +8,6 @@ import {
   type PropsWithChildren,
 } from "react";
 import { useSession } from "./UserContext";
-import { deleteBookFromUserLibrary } from "@/utils/deleteBookFromUserLibrary";
 
 export type CollectionType = "library" | "wishlist" | "borrowed" | "lent";
 
@@ -140,7 +140,7 @@ export function BooksProvider({ children }: PropsWithChildren) {
   const deleteBook = async (collection: CollectionType, isbn: string) => {
     if (collection === "library") {
       if (!user) return;
-      await deleteBookFromUserLibrary(user?.username, isbn);
+      await deleteBookFromUserProfile(user?.username, isbn, collection);
       setLibraryBooks((currentBooks) =>
         currentBooks.filter((book) => book.isbn !== isbn),
       );
