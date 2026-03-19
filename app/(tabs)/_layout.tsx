@@ -64,13 +64,13 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="wishlist"
         options={{
           title: "Wishlist",
           href: null,
         }}
-      />
+      /> */}
 
       <Tabs.Screen
         name="my-books"

@@ -23,10 +23,10 @@ export default function CustomDrawerContent(props: any) {
 
       <DrawerItem label="Lent" onPress={() => router.push("/(tabs)/lent")} />
 
-      <DrawerItem
+      {/* <DrawerItem
         label="Wishlist"
         onPress={() => router.push("/(tabs)/wishlist")}
-      />
+      /> */}
 
       <DrawerItem
         label="Profile"
