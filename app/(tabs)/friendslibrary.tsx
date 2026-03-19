@@ -3,12 +3,12 @@ import type { Book } from "@/context/BooksContext";
 import axios from "axios";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 const API_BASE_URL = "https://boroughbooks.onrender.com/api";
 
 export default function FriendsLibrary() {
-  const { username } = useLocalSearchParams();
+  const { username, profilepic } = useLocalSearchParams();
 
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,10 +33,8 @@ export default function FriendsLibrary() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <Image source={{ uri: profilepic as string }} style={styles.avatar} />
         <Text style={styles.title}>{username}'s Library</Text>
-      </View>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Library</Text>
       </View>
       <BookList books={books} isLoading={isLoading} />
     </View>
@@ -72,5 +70,12 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: "#111",
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 12,
+    backgroundColor: "#D9D9D9",
   },
 });
