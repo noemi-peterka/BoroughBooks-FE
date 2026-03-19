@@ -5,11 +5,14 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { getFriendsByUsername, Friend } from "@/utils/getData";
 
 const BACKEND_URL = "https://boroughbooks.onrender.com";
 
@@ -27,15 +30,31 @@ export default function ConversationListScreen() {
   const currentUsername = user?.username;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newChatUsername, setNewChatUsername] = useState("");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!sessionLoading && currentUsername) {
       loadConversations();
+      loadFriends();
     }
   }, [sessionLoading, currentUsername]);
+
+  const loadFriends = async () => {
+    if (!currentUsername) return;
+
+    try {
+      const friendsList = await getFriendsByUsername(currentUsername);
+      // Filter to only accepted friends
+      const acceptedFriends = friendsList.filter(
+        (friend) => friend.friend_status === "accepted",
+      );
+      setFriends(acceptedFriends);
+    } catch (error: any) {
+      console.error("Error loading friends:", error);
+    }
+  };
 
   const loadConversations = async () => {
     if (!currentUsername) return;
@@ -62,26 +81,30 @@ export default function ConversationListScreen() {
     }
   };
 
-  const createNewConversation = async () => {
+  const startChatWithFriend = async (friendUsername: string) => {
     if (!currentUsername) {
       Alert.alert("Error", "No logged in user found.");
       return;
     }
 
-    const trimmedUsername = newChatUsername.trim();
-
-    if (!trimmedUsername) {
-      Alert.alert("Error", "Please enter a username.");
-      return;
-    }
-
-    if (trimmedUsername === currentUsername) {
-      Alert.alert("Error", "You can't chat with yourself.");
-      return;
-    }
-
     try {
       setCreating(true);
+
+      const existingConversation = conversations.find((conv) => {
+        const otherUser = getOtherUsername(conv);
+        return otherUser === friendUsername;
+      });
+
+      if (existingConversation) {
+        router.push({
+          pathname: "/messages",
+          params: {
+            conversationId: String(existingConversation.conversation_id),
+            otherUsername: friendUsername,
+          },
+        });
+        return;
+      }
 
       const response = await fetch(`${BACKEND_URL}/api/conversations`, {
         method: "POST",
@@ -90,7 +113,7 @@ export default function ConversationListScreen() {
         },
         body: JSON.stringify({
           user1_username: currentUsername,
-          user2_username: trimmedUsername,
+          user2_username: friendUsername,
         }),
       });
 
@@ -102,14 +125,13 @@ export default function ConversationListScreen() {
       const data = await response.json();
       const conversation = data.conversation;
 
-      setNewChatUsername("");
       await loadConversations();
 
       router.push({
         pathname: "/messages",
         params: {
           conversationId: String(conversation.conversation_id),
-          otherUsername: trimmedUsername,
+          otherUsername: friendUsername,
         },
       });
     } catch (error: any) {
@@ -118,6 +140,20 @@ export default function ConversationListScreen() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const getFriendUsername = (friend: Friend) => {
+    if (!currentUsername) return "";
+    return friend.origin_username === currentUsername
+      ? friend.relating_username
+      : friend.origin_username;
+  };
+
+  const getFriendProfilePic = (friend: Friend) => {
+    if (!currentUsername) return "";
+    return friend.origin_username === currentUsername
+      ? friend.friend_profile_pic_url
+      : friend.origin_profile_pic_url;
   };
 
   const getOtherUsername = (conversation: Conversation) => {
@@ -135,6 +171,24 @@ export default function ConversationListScreen() {
         otherUsername,
       },
     });
+  };
+
+  const renderFriendItem = ({ item }: { item: Friend }) => {
+    const friendUsername = getFriendUsername(item);
+    const friendProfilePic = getFriendProfilePic(item);
+
+    return (
+      <TouchableOpacity
+        style={styles.friendItem}
+        onPress={() => startChatWithFriend(friendUsername)}
+        disabled={creating}
+      >
+        <Image source={{ uri: friendProfilePic }} style={styles.friendAvatar} />
+        <Text style={styles.friendName} numberOfLines={1}>
+          {friendUsername}
+        </Text>
+      </TouchableOpacity>
+    );
   };
 
   const renderConversation = ({ item }: { item: Conversation }) => {
@@ -187,38 +241,21 @@ export default function ConversationListScreen() {
           Logged in as {currentUsername}
         </Text>
       </View>
-      {/* start */}
-      {/* <View style={styles.newChatSection}>
-        <Text style={styles.sectionTitle}>Start New Chat</Text>
 
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            value={newChatUsername}
-            onChangeText={setNewChatUsername}
-            placeholder="Enter username..."
-            placeholderTextColor="#999"
-            autoCapitalize="none"
-            editable={!creating}
+      {/* Friends List Section */}
+      {friends.length > 0 && (
+        <View style={styles.friendsSection}>
+          <Text style={styles.sectionTitle}>Start a chat with friends</Text>
+          <FlatList
+            horizontal
+            data={friends}
+            keyExtractor={(item) => item.user_relationship_id.toString()}
+            renderItem={renderFriendItem}
+            contentContainerStyle={styles.friendsList}
+            showsHorizontalScrollIndicator={false}
           />
-
-          <TouchableOpacity
-            style={[
-              styles.createButton,
-              (!newChatUsername.trim() || creating) &&
-                styles.createButtonDisabled,
-            ]}
-            onPress={createNewConversation}
-            disabled={!newChatUsername.trim() || creating}
-          >
-            {creating ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.createButtonText}>Start</Text>
-            )}
-          </TouchableOpacity>
         </View>
-      </View> */}
+      )}
 
       <FlatList
         data={conversations}
@@ -230,7 +267,10 @@ export default function ConversationListScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              No conversations yet.{"\n"}Start one above!
+              No conversations yet.{"\n"}
+              {friends.length > 0
+                ? "Start one with a friend above!"
+                : "Add some friends to start chatting!"}
             </Text>
           </View>
         }
@@ -261,19 +301,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111",
-  },
   headerSubtitle: {
     fontSize: 14,
     color: "#666",
     marginTop: 4,
   },
-  newChatSection: {
+  friendsSection: {
     backgroundColor: "#fff",
-    padding: 16,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
@@ -282,34 +317,27 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#111",
     marginBottom: 12,
+    paddingHorizontal: 16,
   },
-  inputRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
+  friendsList: {
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
   },
-  createButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    justifyContent: "center",
+  friendItem: {
     alignItems: "center",
-    minWidth: 70,
+    marginHorizontal: 4,
+    width: 70,
   },
-  createButtonDisabled: {
-    backgroundColor: "#ccc",
+  friendAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#D9D9D9",
+    marginBottom: 6,
   },
-  createButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+  friendName: {
+    fontSize: 12,
+    color: "#111",
+    textAlign: "center",
   },
   listContent: {
     flexGrow: 1,
