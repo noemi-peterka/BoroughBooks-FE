@@ -93,7 +93,7 @@ export default function Library() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>My Books</Text>
-        <Pressable onPress={() => router.push("/library")}>
+        <Pressable onPress={() => router.push("/my-books")}>
           <Text style={styles.seeAll}>See all</Text>
         </Pressable>
       </View>
