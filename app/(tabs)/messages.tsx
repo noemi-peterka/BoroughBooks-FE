@@ -1,5 +1,6 @@
-import { useSession } from "@/context/UserContext"; // adjust path if needed
+import { useSession } from "@/context/UserContext";
 import { supabase } from "@/utils/supabase";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -33,14 +34,24 @@ export default function MessagesScreen() {
 
   const currentUsername = user?.username;
   const conversationId = Number(params.conversationId);
-  const otherUsername = params.otherUsername as string;
+  const otherUsername = (params.otherUsername as string) || "Chat";
+
+  const prefillText = (params.prefillText as string) || "";
+  const requestBookTitle = (params.requestBookTitle as string) || "";
+  const requestBookIsbn = (params.requestBookIsbn as string) || "";
 
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [newMessage, setNewMessage] = useState(prefillText);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    if (prefillText) {
+      setNewMessage(prefillText);
+    }
+  }, [prefillText]);
 
   useEffect(() => {
     if (!sessionLoading && currentUsername && conversationId) {
@@ -88,11 +99,10 @@ export default function MessagesScreen() {
           const incomingMessage = payload.new as Message;
 
           setMessages((prev) => {
-            const alreadyExists = prev.some(
-              (msg) => msg.message_id === incomingMessage.message_id,
+            const exists = prev.some(
+              (message) => message.message_id === incomingMessage.message_id,
             );
-
-            if (alreadyExists) return prev;
+            if (exists) return prev;
             return [...prev, incomingMessage];
           });
 
@@ -146,6 +156,20 @@ export default function MessagesScreen() {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleApproveBorrow = () => {
+    Alert.alert(
+      "Coming soon",
+      "Approve borrow action will be connected to the backend soon.",
+    );
+  };
+
+  const handleRejectBorrow = () => {
+    Alert.alert(
+      "Coming soon",
+      "Reject borrow action will be connected to the backend soon.",
+    );
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
@@ -214,6 +238,34 @@ export default function MessagesScreen() {
 
         <Text style={styles.headerTitle}>{otherUsername}</Text>
       </View>
+
+      {(requestBookTitle || requestBookIsbn) && (
+        <View style={styles.bookRequestBanner}>
+          <Text style={styles.bookRequestLabel}>Borrow request</Text>
+          <Text style={styles.bookRequestTitle}>{requestBookTitle}</Text>
+          {requestBookIsbn ? (
+            <Text style={styles.bookRequestMeta}>ISBN: {requestBookIsbn}</Text>
+          ) : null}
+
+          <View style={styles.requestActionRow}>
+            <TouchableOpacity
+              style={styles.requestActionButton}
+              onPress={handleApproveBorrow}
+            >
+              <Ionicons name="checkmark-circle" size={28} color="green" />
+              <Text style={styles.requestActionText}>Approve</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.requestActionButton}
+              onPress={handleRejectBorrow}
+            >
+              <Ionicons name="close-circle" size={28} color="red" />
+              <Text style={styles.requestActionText}>Decline</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       <FlatList
         ref={flatListRef}
@@ -296,6 +348,46 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontWeight: "600",
+    color: "#111",
+  },
+  bookRequestBanner: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  bookRequestLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  bookRequestTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111",
+    marginBottom: 4,
+  },
+  bookRequestMeta: {
+    fontSize: 13,
+    color: "#666",
+    marginBottom: 12,
+  },
+  requestActionRow: {
+    flexDirection: "row",
+    gap: 24,
+    alignItems: "center",
+  },
+  requestActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  requestActionText: {
+    fontSize: 14,
     fontWeight: "600",
     color: "#111",
   },
