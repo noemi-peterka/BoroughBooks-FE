@@ -104,6 +104,7 @@ export default function Library() {
         onDelete={handleDeleteBook}
         layout="carousel"
         collectionType="library"
+        showAddTile={true}
       />
       {/* 
       <View style={styles.sectionHeader}>
