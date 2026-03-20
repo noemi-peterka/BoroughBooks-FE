@@ -61,6 +61,12 @@ export default function BookCard({
 
             {collectionType === "borrowed" && book.username && (
               <View style={styles.lenderOverlay}>
+                {book.lender_profile_pic && (
+                  <Image
+                    source={{ uri: book.lender_profile_pic }}
+                    style={styles.profilePic}
+                  />
+                )}
                 <Text style={styles.lenderText}>Loaned by:</Text>
                 <Text style={styles.lenderUsername}>{book.username}</Text>
               </View>
@@ -68,6 +74,12 @@ export default function BookCard({
 
             {collectionType === "lent" && book.borrower_id && (
               <View style={styles.lenderOverlay}>
+                {book.borrower_profile_pic && (
+                  <Image
+                    source={{ uri: book.borrower_profile_pic }}
+                    style={styles.profilePic}
+                  />
+                )}
                 <Text style={styles.lenderText}>Borrowed by:</Text>
                 <Text style={styles.lenderUsername}>{book.borrower_id}</Text>
               </View>
@@ -81,6 +93,12 @@ export default function BookCard({
 
             {collectionType === "borrowed" && book.username && (
               <View style={styles.lenderOverlay}>
+                {book.lender_profile_pic && (
+                  <Image
+                    source={{ uri: book.lender_profile_pic }}
+                    style={styles.profilePic}
+                  />
+                )}
                 <Text style={styles.lenderText}>Loaned by:</Text>
                 <Text style={styles.lenderUsername}>{book.username}</Text>
               </View>
@@ -88,6 +106,12 @@ export default function BookCard({
 
             {collectionType === "lent" && book.borrower_id && (
               <View style={styles.lenderOverlay}>
+                {book.borrower_profile_pic && (
+                  <Image
+                    source={{ uri: book.borrower_profile_pic }}
+                    style={styles.profilePic}
+                  />
+                )}
                 <Text style={styles.lenderText}>Borrowed by:</Text>
                 <Text style={styles.lenderUsername}>{book.borrower_id}</Text>
               </View>
@@ -194,6 +218,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
+  },
+
+  profilePic: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: "#fff",
   },
 
   lenderText: {

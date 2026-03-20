@@ -18,6 +18,8 @@ export type Book = {
   title: string;
   authors: string;
   publisher?: string;
+  lender_profile_pic?: string;
+  borrower_profile_pic?: string;
   published_date?: string | number;
   description?: string;
   imagelinks?: string;
