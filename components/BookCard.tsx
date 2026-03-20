@@ -84,6 +84,20 @@ export default function BookCard({
                 <Text style={styles.lenderUsername}>{book.borrower_id}</Text>
               </View>
             )}
+            {collectionType === "library" &&
+              book.is_loaned &&
+              book.borrower_id && (
+                <View style={styles.lenderOverlay}>
+                  {book.borrower_profile_pic && (
+                    <Image
+                      source={{ uri: book.borrower_profile_pic }}
+                      style={styles.profilePic}
+                    />
+                  )}
+                  <Text style={styles.lenderText}>Borrowed by:</Text>
+                  <Text style={styles.lenderUsername}>{book.borrower_id}</Text>
+                </View>
+              )}
           </View>
         ) : (
           <View style={[styles.image, styles.fallbackCover]}>
@@ -116,6 +130,20 @@ export default function BookCard({
                 <Text style={styles.lenderUsername}>{book.borrower_id}</Text>
               </View>
             )}
+            {collectionType === "library" &&
+              book.is_loaned &&
+              book.borrower_id && (
+                <View style={styles.lenderOverlay}>
+                  {book.borrower_profile_pic && (
+                    <Image
+                      source={{ uri: book.borrower_profile_pic }}
+                      style={styles.profilePic}
+                    />
+                  )}
+                  <Text style={styles.lenderText}>Borrowed by:</Text>
+                  <Text style={styles.lenderUsername}>{book.borrower_id}</Text>
+                </View>
+              )}
           </View>
         )}
       </Pressable>

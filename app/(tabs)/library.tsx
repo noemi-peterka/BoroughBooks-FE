@@ -28,7 +28,22 @@ export default function Library() {
 
   const query = search.trim().toLowerCase();
 
-  const availableBooks = libraryBooks.filter((book) => {
+  const booksWithLoanStatus = libraryBooks.map((book) => {
+    const lentBook = lentBooks.find((lent) => lent.isbn === book.isbn);
+
+    if (lentBook) {
+      return {
+        ...book,
+        is_loaned: true,
+        borrower_id: lentBook.borrower_id,
+        borrower_profile_pic: lentBook.borrower_profile_pic,
+      };
+    }
+
+    return book;
+  });
+
+  const availableBooks = booksWithLoanStatus.filter((book) => {
     return (
       book.title.toLowerCase().includes(query) ||
       book.authors.toLowerCase().includes(query)
