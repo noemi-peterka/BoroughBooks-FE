@@ -21,6 +21,7 @@ export type Book = {
   lender_profile_pic?: string;
   borrower_profile_pic?: string;
   published_date?: string | number;
+  is_loaned?: boolean;
   description?: string;
   imagelinks?: string;
 };

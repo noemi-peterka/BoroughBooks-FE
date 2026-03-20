@@ -5,10 +5,31 @@ import BookList from "../../components/BookList";
 import { useBooks, type Book } from "../../context/BooksContext";
 
 export default function MyBooksScreen() {
-  const { libraryBooks, deleteBook } = useBooks();
+  const { libraryBooks, lentBooks, deleteBook } = useBooks();
   const [search, setSearch] = useState("");
 
-  const filteredBooks = libraryBooks.filter((book) => {
+  const booksWithLoanStatus = libraryBooks.map((book) => {
+    const lentBook = lentBooks.find((lent) => lent.isbn === book.isbn);
+
+    if (lentBook) {
+      console.log(
+        "Found loaned book:",
+        book.title,
+        "borrower:",
+        lentBook.borrower_id,
+      ); // ← ADD THIS
+
+      return {
+        ...book,
+        is_loaned: true,
+        borrower_id: lentBook.borrower_id,
+        borrower_profile_pic: lentBook.borrower_profile_pic,
+      };
+    }
+
+    return book;
+  });
+  const filteredBooks = booksWithLoanStatus.filter((book) => {
     const query = search.trim().toLowerCase();
 
     return (
@@ -54,6 +75,7 @@ export default function MyBooksScreen() {
         onDelete={handleDeleteBook}
         onSwap={handleLendBook}
         showAddTile
+        collectionType="library"
       />
     </View>
   );
