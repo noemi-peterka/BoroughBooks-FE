@@ -1,4 +1,5 @@
 import { useSession } from "@/context/UserContext";
+import { Friend, getFriendsByUsername } from "@/utils/getData";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -6,13 +7,11 @@ import {
   Alert,
   FlatList,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { getFriendsByUsername, Friend } from "@/utils/getData";
 
 const BACKEND_URL = "https://boroughbooks.onrender.com";
 
@@ -97,7 +96,10 @@ export default function ConversationListScreen() {
     }
   };
 
-  const startChatWithFriend = async (friendUsername: string) => {
+  const startChatWithFriend = async (
+    friendUsername: string,
+    friendProfilePic: string,
+  ) => {
     if (!currentUsername) {
       Alert.alert("Error", "No logged in user found.");
       return;
@@ -117,6 +119,7 @@ export default function ConversationListScreen() {
           params: {
             conversationId: String(existingConversation.conversation_id),
             otherUsername: friendUsername,
+            otherProfilePic: friendProfilePic,
           },
         });
         return;
@@ -148,6 +151,7 @@ export default function ConversationListScreen() {
         params: {
           conversationId: String(conversation.conversation_id),
           otherUsername: friendUsername,
+          otherProfilePic: friendProfilePic,
         },
       });
     } catch (error: any) {
@@ -194,12 +198,17 @@ export default function ConversationListScreen() {
     return null;
   };
 
-  const openChat = (conversationId: number, otherUsername: string) => {
+  const openChat = (
+    conversationId: number,
+    otherUsername: string,
+    profilePic: string | null,
+  ) => {
     router.push({
       pathname: "/messages",
       params: {
         conversationId: String(conversationId),
         otherUsername,
+        otherProfilePic: profilePic ?? "",
       },
     });
   };
@@ -211,7 +220,7 @@ export default function ConversationListScreen() {
     return (
       <TouchableOpacity
         style={styles.friendItem}
-        onPress={() => startChatWithFriend(friendUsername)}
+        onPress={() => startChatWithFriend(friendUsername, friendProfilePic)}
         disabled={creating}
       >
         <Image source={{ uri: friendProfilePic }} style={styles.friendAvatar} />
@@ -229,7 +238,9 @@ export default function ConversationListScreen() {
     return (
       <TouchableOpacity
         style={styles.conversationItem}
-        onPress={() => openChat(item.conversation_id, otherUsername)}
+        onPress={() =>
+          openChat(item.conversation_id, otherUsername, profilePic)
+        }
       >
         {profilePic ? (
           <Image
