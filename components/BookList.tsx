@@ -79,7 +79,8 @@ export default function BookList({
           onPress={() => router.push("/add-book")}
         >
           <View style={styles.addTile}>
-            <Ionicons name="add" size={26} color="#fff" />
+            <Ionicons name="add" size={32} color="#000" />
+            <Text style={styles.addTileText}>Add book</Text>
           </View>
         </Pressable>
       );
@@ -154,15 +155,23 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   addTile: {
-    width: 56,
-    height: 56,
-    backgroundColor: "black",
-    borderRadius: 28,
+    width: "100%",
+    height: 220,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#000",
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    alignSelf: "center",
-    marginTop: 80,
   },
+
+  addTileText: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000",
+  },
+
   stateContainer: {
     flex: 1,
     justifyContent: "center",
@@ -174,7 +183,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   carouselAddCard: {
-    width: 70,
+    width: 100,
     marginRight: 20,
     justifyContent: "flex-start",
   },
