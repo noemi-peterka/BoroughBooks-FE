@@ -1,3 +1,4 @@
+import axios from "axios";
 const API_BASE_URL = "https://boroughbooks.onrender.com/api";
 
 type CreateLoanResponse = {
@@ -15,6 +16,10 @@ export async function createLoan(
   isbn: string,
   borrowerId: string,
 ) {
+  const bookRes = await axios.get(
+    `${API_BASE_URL}/users/${encodeURIComponent(ownerUsername)}/my-library/${isbn}`,
+  );
+  const ownerBookId = bookRes.data.usersBookByIsbn[0].users_book_id;
   const response = await fetch(
     `${API_BASE_URL}/users/${encodeURIComponent(ownerUsername)}/loaned`,
     {
@@ -23,7 +28,7 @@ export async function createLoan(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        isbn,
+        users_book_id: ownerBookId,
         borrower_id: borrowerId,
       }),
     },
