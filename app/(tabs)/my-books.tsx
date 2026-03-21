@@ -84,9 +84,7 @@ export default function MyBooksScreen() {
         books={filteredBooks}
         isLoading={false}
         showDelete
-        // showSwap
         onDelete={handleDeleteBook}
-        // onSwap={handleLendBook}
         showAddTile
         collectionType="library"
       />
