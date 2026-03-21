@@ -74,7 +74,20 @@ export default function Library() {
   });
 
   const handleDeleteBook = (book: Book) => {
-    deleteBook("library", book.isbn);
+    Alert.alert("Delete book", `Delete "${book.title}" from your library?`, [
+      {
+        text: "No",
+        onPress: () => console.log("Cancel Pressed"),
+        style: "cancel",
+      },
+      {
+        text: "Yes",
+        onPress: async () => {
+          await deleteBook("library", book.isbn);
+          Alert.alert(`You've removed ${book.title} from your books.`);
+        },
+      },
+    ]);
   };
 
   const handleReturnBook = (book: Book) => {
