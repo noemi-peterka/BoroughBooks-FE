@@ -20,9 +20,11 @@ type BookListProps = {
   showDelete?: boolean;
   showSwap?: boolean;
   showRequest?: boolean;
+  showReturn?: boolean;
   onRequest?: (book: Book) => void;
   onDelete?: (book: Book) => void;
   onSwap?: (book: Book) => void;
+  onReturn?: (book: Book) => void;
   addToCollection?: "library" | "wishlist" | "borrowed" | "lent";
   collectionType?: "library" | "wishlist" | "borrowed" | "lent";
 
@@ -36,9 +38,11 @@ export default function BookList({
   showDelete = false,
   showSwap = false,
   showRequest = false,
+  showReturn = false,
   onRequest,
   onDelete,
   onSwap,
+  onReturn,
   showAddTile = false,
   collectionType,
   layout = "grid",
@@ -95,9 +99,11 @@ export default function BookList({
           showDelete={showDelete}
           showSwap={showSwap}
           showRequest={showRequest}
+          showReturn={showReturn}
           onRequest={onRequest}
           onDelete={onDelete}
           onSwap={onSwap}
+          onReturn={onReturn}
           collectionType={collectionType}
         />
       </View>
