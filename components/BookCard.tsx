@@ -17,9 +17,11 @@ type BookCardProps = {
   showDelete?: boolean;
   showSwap?: boolean;
   showRequest?: boolean;
+  showReturn?: boolean;
   onRequest?: (book: Book) => void;
   onDelete?: (book: Book) => void;
   onSwap?: (book: Book) => void;
+  onReturn?: (book: Book) => void;
   collectionType?: "library" | "wishlist" | "borrowed" | "lent";
 };
 
@@ -28,9 +30,11 @@ export default function BookCard({
   showDelete = false,
   showSwap = false,
   showRequest = false,
+  showReturn = false,
   onRequest,
   onDelete,
   onSwap,
+  onReturn,
   collectionType,
 }: BookCardProps) {
   const [modalVisible, setModalVisible] = useState(false);
@@ -49,6 +53,11 @@ export default function BookCard({
 
   const handleSwap = () => {
     onSwap?.(book);
+    setModalVisible(false);
+  };
+
+  const handleReturn = () => {
+    onReturn?.(book);
     setModalVisible(false);
   };
 
@@ -196,6 +205,16 @@ export default function BookCard({
                   <Pressable onPress={handleRequest}>
                     <Ionicons
                       name="chatbubble-ellipses-outline"
+                      size={28}
+                      color="black"
+                    />
+                  </Pressable>
+                )}
+
+                {showReturn && (
+                  <Pressable onPress={handleReturn}>
+                    <Ionicons
+                      name="return-up-back-outline"
                       size={28}
                       color="black"
                     />
