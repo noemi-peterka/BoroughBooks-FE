@@ -18,13 +18,13 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 ## Using google API key to query the google database with Scanner.
 
-Please a plain .env file with the following inside:
+Please create a `.env` file in the project root with the following:
 
 ```
 EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY=["YOUR GOOGLE API KEY HERE]
 ```
 
-This works in conjunction with out add-book.tsk file on line 172:
+This works in conjunction with "add-book.tsk" file on line 172:
 const GOOGLE_BOOKS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY;
 
 ## To set up messaging on Front end.
@@ -32,12 +32,10 @@ const GOOGLE_BOOKS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY;
 To set up messaging on front end first please ensure you've installed the express cors dependencies. If unsure run the
 following commands.
 
-npm install express cors @supabase/supabase-js dotenv
 npm install @supabase/supabase-js
 
-To set up messaging you will be required to get your supabase ANON public key and SERVICE key.
-To find these go to your supabase project dashboard from there click on "project settings"(appears with cog/gear icon).
-From there head to API keys and click on the "Legacy anon, service_role API keys" tab to see your ANON and SERVICE key.
+To set up messaging you will be required to get your supabase ANON public key.
+To find this, go to your supabase project dashboard. From there click on "project settings"(appears with cog/gear icon), then head to API keys. Once there click on the "Legacy anon, service_role API keys" tab to see your ANON and SERVICE key.
 
 Next you need to update and add to your .env file with your supabase ANON_KEY.
 

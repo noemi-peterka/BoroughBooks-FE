@@ -32,11 +32,45 @@ export default function FriendsLibrary() {
       if (!friendUsername) return;
 
       setIsLoading(true);
+
       try {
-        const response = await axios.get<{ books: Book[] }>(
-          `${API_BASE_URL}/users/${encodeURIComponent(friendUsername)}/my-library`,
+        const encodedUsername = encodeURIComponent(friendUsername);
+
+        const [libraryResponse, loanedResponse] = await Promise.all([
+          axios.get<{ books: Book[] }>(
+            `${API_BASE_URL}/users/${encodedUsername}/my-library`,
+          ),
+          axios.get<{ books: Book[] }>(
+            `${API_BASE_URL}/users/${encodedUsername}/loaned`,
+          ),
+        ]);
+
+        const libraryBooks = libraryResponse.data.books || [];
+        const loanedBooks = loanedResponse.data.books || [];
+
+        const loanedBooksByIsbn = new Map(
+          loanedBooks.map((book) => [book.isbn, book]),
         );
-        setBooks(response.data.books || []);
+
+        const mergedBooks = libraryBooks.map((book) => {
+          const loanedMatch = loanedBooksByIsbn.get(book.isbn);
+
+          if (!loanedMatch) {
+            return {
+              ...book,
+              is_loaned: false,
+            };
+          }
+
+          return {
+            ...book,
+            is_loaned: true,
+            borrower_id: loanedMatch.borrower_id,
+            borrower_profile_pic: loanedMatch.borrower_profile_pic,
+          };
+        });
+
+        setBooks(mergedBooks);
       } catch (error) {
         console.error("Failed to fetch friend's library:", error);
         Alert.alert("Error", "Could not load this friend's library.");
@@ -140,6 +174,14 @@ export default function FriendsLibrary() {
       return;
     }
 
+    if (book.is_loaned) {
+      Alert.alert(
+        "Unavailable",
+        `This book is already borrowed by ${book.borrower_id ?? "someone else"}.`,
+      );
+      return;
+    }
+
     if (isSendingRequest) return;
 
     setIsSendingRequest(true);
@@ -194,6 +236,7 @@ export default function FriendsLibrary() {
         isLoading={isLoading}
         showRequest
         onRequest={handleRequestBook}
+        collectionType="library"
       />
     </View>
   );

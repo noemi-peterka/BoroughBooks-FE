@@ -46,6 +46,7 @@ export default function MessagesScreen() {
   const currentUsername = user?.username;
   const conversationId = Number(params.conversationId);
   const otherUsername = (params.otherUsername as string) || "Chat";
+  const otherProfilePic = (params.otherProfilePic as string) || "";
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -496,6 +497,10 @@ export default function MessagesScreen() {
           <Text style={styles.backText}>‹ Back</Text>
         </TouchableOpacity>
 
+        {otherProfilePic ? (
+          <Image source={{ uri: otherProfilePic }} style={styles.avatar} />
+        ) : null}
+
         <Text style={styles.headerTitle}>{otherUsername}</Text>
       </View>
 
@@ -717,5 +722,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 8,
+    backgroundColor: "#D9D9D9",
   },
 });
