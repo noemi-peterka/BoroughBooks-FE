@@ -26,10 +26,6 @@ export default function BorrowedScreen() {
     );
   });
 
-  const handleDeleteBook = (book: Book) => {
-    deleteBook("borrowed", book.isbn);
-  };
-
   const handleLendBook = (book: Book) => {
     Alert.alert("Lend book", `You selected "${book.title}" to lend.`);
   };
