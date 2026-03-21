@@ -64,15 +64,7 @@ export default function LentScreen() {
         )}
       </View>
 
-      <BookList
-        books={filteredBooks}
-        isLoading={false}
-        showDelete
-        showSwap
-        onDelete={handleDeleteBook}
-        onSwap={handleLendBook}
-        collectionType="lent"
-      />
+      <BookList books={filteredBooks} isLoading={false} collectionType="lent" />
     </View>
   );
 }
