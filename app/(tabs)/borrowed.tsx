@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import BookList from "../../components/BookList";
 import { useBooks, type Book } from "../../context/BooksContext";
+import { returnBook } from "../../utils/returnBook";
 
 export default function BorrowedScreen() {
   const { borrowedBooks, deleteBook } = useBooks();
@@ -31,6 +32,25 @@ export default function BorrowedScreen() {
 
   const handleLendBook = (book: Book) => {
     Alert.alert("Lend book", `You selected "${book.title}" to lend.`);
+  };
+
+  const handleReturnBook = (book: Book, ownerUsername: string) => {
+    Alert.alert("Return book", `Return "${book.title}" to ${book.username}?`, [
+      {
+        text: "No",
+        onPress: () => console.log("Cancel Pressed"),
+        style: "cancel",
+      },
+      {
+        text: "Yes",
+        onPress: async () => {
+          await returnBook(book);
+          Alert.alert(
+            `You've returned this book to ${book.username}. Thank you!`,
+          );
+        },
+      },
+    ]);
   };
 
   return (
@@ -66,10 +86,8 @@ export default function BorrowedScreen() {
       <BookList
         books={filteredBooks}
         isLoading={false}
-        showDelete
-        showSwap
-        onDelete={handleDeleteBook}
-        onSwap={handleLendBook}
+        showReturn
+        onReturn={handleReturnBook}
         collectionType="borrowed"
       />
     </View>
