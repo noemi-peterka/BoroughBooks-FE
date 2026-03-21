@@ -95,7 +95,7 @@ export default function BookList({
       >
         <BookCard
           book={item}
-          showDelete={showDelete}
+          showDelete={showDelete && !item.is_loaned}
           showSwap={showSwap}
           showReturn={showReturn}
           showRequest={showRequest && !item.is_loaned}
