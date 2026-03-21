@@ -1,8 +1,10 @@
 import { useSession } from "@/context/UserContext";
+import { returnBook } from "@/utils/returnBook";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -73,6 +75,25 @@ export default function Library() {
 
   const handleDeleteBook = (book: Book) => {
     deleteBook("library", book.isbn);
+  };
+
+  const handleReturnBook = (book: Book) => {
+    Alert.alert("Return book", `Return "${book.title}" to ${book.username}?`, [
+      {
+        text: "No",
+        onPress: () => console.log("Cancel Pressed"),
+        style: "cancel",
+      },
+      {
+        text: "Yes",
+        onPress: async () => {
+          await returnBook(book);
+          Alert.alert(
+            `You've returned this book to ${book.username}. Thank you!`,
+          );
+        },
+      },
+    ]);
   };
 
   return (
@@ -158,6 +179,8 @@ export default function Library() {
       <BookList
         books={filteredBorrowedBooks}
         isLoading={isLoading}
+        showReturn
+        onReturn={handleReturnBook}
         layout="carousel"
         collectionType="borrowed"
       />
