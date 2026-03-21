@@ -34,7 +34,7 @@ export default function BorrowedScreen() {
     Alert.alert("Lend book", `You selected "${book.title}" to lend.`);
   };
 
-  const handleReturnBook = (book: Book, ownerUsername: string) => {
+  const handleReturnBook = (book: Book) => {
     Alert.alert("Return book", `Return "${book.title}" to ${book.username}?`, [
       {
         text: "No",
