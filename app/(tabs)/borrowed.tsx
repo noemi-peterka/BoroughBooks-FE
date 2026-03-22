@@ -6,7 +6,7 @@ import { useBooks, type Book } from "../../context/BooksContext";
 import { returnBook } from "../../utils/returnBook";
 
 export default function BorrowedScreen() {
-  const { borrowedBooks, deleteBook } = useBooks();
+  const { borrowedBooks, deleteBook, refetchBooks } = useBooks();
   const [search, setSearch] = useState("");
 
   const filteredBooks = borrowedBooks.filter((book) => {
@@ -34,6 +34,7 @@ export default function BorrowedScreen() {
         text: "Yes",
         onPress: async () => {
           await returnBook(book);
+          await refetchBooks();
           Alert.alert(
             `You've returned this book to ${book.username}. Thank you!`,
           );

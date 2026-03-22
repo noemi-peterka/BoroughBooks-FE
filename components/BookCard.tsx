@@ -202,22 +202,26 @@ export default function BookCard({
                 )}
 
                 {showRequest && (
-                  <Pressable onPress={handleRequest}>
-                    <Ionicons
-                      name="chatbubble-ellipses-outline"
-                      size={28}
-                      color="black"
-                    />
+                  <Pressable
+                    onPress={handleRequest}
+                    style={styles.requestAction}
+                  >
+                    <Ionicons name="book-outline" size={24} color="#3a24ff" />
+                    <Text style={styles.requestText}>Request to Borrow</Text>
                   </Pressable>
                 )}
 
                 {showReturn && (
-                  <Pressable onPress={handleReturn}>
+                  <Pressable
+                    onPress={handleReturn}
+                    style={styles.requestAction}
+                  >
                     <Ionicons
                       name="return-up-back-outline"
-                      size={28}
-                      color="black"
+                      size={24}
+                      color="#3a24ff"
                     />
+                    <Text style={styles.requestText}>Return Book</Text>
                   </Pressable>
                 )}
               </View>
@@ -381,5 +385,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 30,
     marginVertical: 10,
+  },
+  requestAction: {
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
+  },
+  requestText: {
+    fontSize: 11,
+    color: "#3a24ff",
+    fontWeight: "500",
   },
 });

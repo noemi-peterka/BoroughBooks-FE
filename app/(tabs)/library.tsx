@@ -23,6 +23,7 @@ export default function Library() {
     wishlistBooks,
     deleteBook,
     isLoading,
+    refetchBooks,
   } = useBooks();
 
   const [search, setSearch] = useState("");
@@ -101,6 +102,8 @@ export default function Library() {
         text: "Yes",
         onPress: async () => {
           await returnBook(book);
+          await refetchBooks();
+
           Alert.alert(
             `You've returned this book to ${book.username}. Thank you!`,
           );
