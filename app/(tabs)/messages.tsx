@@ -42,7 +42,7 @@ export default function MessagesScreen() {
   const router = useRouter();
   const { user, isLoading: sessionLoading } = useSession();
   const { refetchBooks } = useBooks();
-
+  const { lentBooks } = useBooks();
   const currentUsername = user?.username;
   const conversationId = Number(params.conversationId);
   const otherUsername = (params.otherUsername as string) || "Chat";
@@ -173,15 +173,20 @@ export default function MessagesScreen() {
     const request = parseBorrowRequestMessage(message.content);
     if (!request) return false;
 
-    return messages.some((otherMessage) => {
-      const approved = parseBorrowApprovedMessage(otherMessage.content);
-      if (approved && approved.isbn === request.isbn) return true;
+    const isCurrentlyLent = lentBooks.some(
+      (book) => book.isbn === request.isbn,
+    );
 
-      const declined = parseBorrowDeclinedMessage(otherMessage.content);
-      if (declined && declined.isbn === request.isbn) return true;
+    const currentIndex = messages.findIndex(
+      (m) => m.message_id === message.message_id,
+    );
+    const wasDeclinedAfterThis = messages
+      .slice(currentIndex + 1)
+      .some(
+        (m) => parseBorrowDeclinedMessage(m.content)?.isbn === request.isbn,
+      );
 
-      return false;
-    });
+    return isCurrentlyLent || wasDeclinedAfterThis;
   };
 
   const handleApproveBorrow = async (message: Message) => {
